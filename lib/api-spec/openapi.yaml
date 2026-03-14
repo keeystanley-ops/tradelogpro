@@ -1,22 +1,34 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Trading Journal & Analytics API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: trades
+    description: Trade management
+  - name: analytics
+    description: Analytics and reporting
+  - name: goals
+    description: Goals and tracking
+  - name: journal
+    description: Trade journal enrichment
+  - name: playbooks
+    description: Trading playbooks / strategies
+  - name: ai
+    description: AI-powered features
+  - name: insights
+    description: Behavioral insights
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,445 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /trades:
+    get:
+      operationId: getTrades
+      tags: [trades]
+      summary: Get all trades
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+        - name: assetClass
+          in: query
+          schema:
+            type: string
+        - name: direction
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: setupTag
+          in: query
+          schema:
+            type: string
+        - name: symbol
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradesResponse"
+    post:
+      operationId: createTrade
+      tags: [trades]
+      summary: Create a new trade manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTradeRequest"
+      responses:
+        "201":
+          description: Trade created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+
+  /trades/{id}:
+    get:
+      operationId: getTrade
+      tags: [trades]
+      summary: Get trade by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trade detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+    patch:
+      operationId: updateTrade
+      tags: [trades]
+      summary: Update trade enrichment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTradeRequest"
+      responses:
+        "200":
+          description: Trade updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+    delete:
+      operationId: deleteTrade
+      tags: [trades]
+      summary: Delete a trade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Trade deleted
+
+  /trades/import/csv:
+    post:
+      operationId: importTradesCsv
+      tags: [trades]
+      summary: Import trades from CSV
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvImportRequest"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /analytics/dashboard:
+    get:
+      operationId: getDashboardAnalytics
+      tags: [analytics]
+      summary: Get dashboard summary metrics
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardMetrics"
+
+  /analytics/equity-curve:
+    get:
+      operationId: getEquityCurve
+      tags: [analytics]
+      summary: Get equity curve data
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Equity curve data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquityCurveResponse"
+
+  /analytics/heatmap:
+    get:
+      operationId: getHeatmap
+      tags: [analytics]
+      summary: Get time-of-day performance heatmap
+      responses:
+        "200":
+          description: Heatmap data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeatmapResponse"
+
+  /analytics/symbols:
+    get:
+      operationId: getSymbolPerformance
+      tags: [analytics]
+      summary: Get performance by symbol
+      responses:
+        "200":
+          description: Symbol performance data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymbolPerformanceResponse"
+
+  /analytics/calendar:
+    get:
+      operationId: getCalendarData
+      tags: [analytics]
+      summary: Get calendar view data
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: month
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Calendar data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarResponse"
+
+  /analytics/behavioral:
+    get:
+      operationId: getBehavioralAnalytics
+      tags: [analytics]
+      summary: Get behavioral analytics (mistakes, emotions, streaks)
+      responses:
+        "200":
+          description: Behavioral analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BehavioralAnalytics"
+
+  /goals:
+    get:
+      operationId: getGoals
+      tags: [goals]
+      summary: Get all goals
+      responses:
+        "200":
+          description: List of goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goal"
+    post:
+      operationId: createGoal
+      tags: [goals]
+      summary: Create a goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoalRequest"
+      responses:
+        "201":
+          description: Goal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}:
+    patch:
+      operationId: updateGoal
+      tags: [goals]
+      summary: Update a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGoalRequest"
+      responses:
+        "200":
+          description: Goal updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      summary: Delete a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Goal deleted
+
+  /playbooks:
+    get:
+      operationId: getPlaybooks
+      tags: [playbooks]
+      summary: Get all playbooks
+      responses:
+        "200":
+          description: List of playbooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Playbook"
+    post:
+      operationId: createPlaybook
+      tags: [playbooks]
+      summary: Create a playbook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlaybookRequest"
+      responses:
+        "201":
+          description: Playbook created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playbook"
+
+  /playbooks/{id}:
+    patch:
+      operationId: updatePlaybook
+      tags: [playbooks]
+      summary: Update a playbook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlaybookRequest"
+      responses:
+        "200":
+          description: Playbook updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playbook"
+    delete:
+      operationId: deletePlaybook
+      tags: [playbooks]
+      summary: Delete a playbook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Playbook deleted
+
+  /analytics/insights:
+    get:
+      operationId: getInsights
+      tags: [insights]
+      summary: Get behavioral insights
+      responses:
+        "200":
+          description: Insights list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsResponse"
+
+  /analytics/weekly-review:
+    get:
+      operationId: getWeeklyReview
+      tags: [analytics]
+      summary: Get weekly review
+      parameters:
+        - name: weekStart
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Weekly review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReview"
+
+  /ai/summarize-note:
+    post:
+      operationId: aiSummarizeNote
+      tags: [ai]
+      summary: AI summarize trade note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiSummarizeRequest"
+      responses:
+        "200":
+          description: AI summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiSummarizeResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +485,763 @@ components:
       required:
         - status
 
+    Trade:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        assetClass:
+          type: string
+          enum: [STOCK, CRYPTO, OPTION, FUTURES, FOREX]
+        direction:
+          type: string
+          enum: [LONG, SHORT]
+        quantity:
+          type: number
+        entryPrice:
+          type: number
+        exitPrice:
+          type: number
+        entryTime:
+          type: string
+        exitTime:
+          type: string
+        durationSeconds:
+          type: number
+        grossPnl:
+          type: number
+        netPnl:
+          type: number
+        commissions:
+          type: number
+        fees:
+          type: number
+        slippage:
+          type: number
+        status:
+          type: string
+          enum: [OPEN, CLOSED, PENDING]
+        importSource:
+          type: string
+          enum: [API, CSV, MANUAL]
+        setupTag:
+          type: string
+          nullable: true
+        mistakeTag:
+          type: string
+          nullable: true
+        emotionTag:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+        rMultiple:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - symbol
+        - assetClass
+        - direction
+        - quantity
+        - entryPrice
+        - exitPrice
+        - entryTime
+        - exitTime
+        - durationSeconds
+        - grossPnl
+        - netPnl
+        - commissions
+        - fees
+        - slippage
+        - status
+        - importSource
+        - createdAt
+
+    CreateTradeRequest:
+      type: object
+      properties:
+        symbol:
+          type: string
+        assetClass:
+          type: string
+          enum: [STOCK, CRYPTO, OPTION, FUTURES, FOREX]
+        direction:
+          type: string
+          enum: [LONG, SHORT]
+        quantity:
+          type: number
+        entryPrice:
+          type: number
+        exitPrice:
+          type: number
+        entryTime:
+          type: string
+        exitTime:
+          type: string
+        commissions:
+          type: number
+          default: 0
+        fees:
+          type: number
+          default: 0
+        slippage:
+          type: number
+          default: 0
+        stopLoss:
+          type: number
+          nullable: true
+        setupTag:
+          type: string
+          nullable: true
+        mistakeTag:
+          type: string
+          nullable: true
+        emotionTag:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+      required:
+        - symbol
+        - assetClass
+        - direction
+        - quantity
+        - entryPrice
+        - exitPrice
+        - entryTime
+        - exitTime
+
+    UpdateTradeRequest:
+      type: object
+      properties:
+        setupTag:
+          type: string
+          nullable: true
+        mistakeTag:
+          type: string
+          nullable: true
+        emotionTag:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+
+    CsvImportRequest:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateTradeRequest"
+      required:
+        - rows
+
+    ImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - imported
+        - skipped
+        - errors
+
+    TradesResponse:
+      type: object
+      properties:
+        trades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Trade"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - trades
+        - total
+        - page
+        - limit
+
+    DashboardMetrics:
+      type: object
+      properties:
+        netPnl:
+          type: number
+        grossPnl:
+          type: number
+        totalTrades:
+          type: integer
+        winningTrades:
+          type: integer
+        losingTrades:
+          type: integer
+        winRate:
+          type: number
+        profitFactor:
+          type: number
+        avgWin:
+          type: number
+        avgLoss:
+          type: number
+        expectancy:
+          type: number
+        maxDrawdown:
+          type: number
+        maxDrawdownPct:
+          type: number
+        avgHoldingMinutes:
+          type: number
+        currentStreak:
+          type: integer
+        currentStreakType:
+          type: string
+          enum: [WIN, LOSS, NONE]
+        longestWinStreak:
+          type: integer
+        longestLossStreak:
+          type: integer
+        totalCommissions:
+          type: number
+        sharpeRatio:
+          type: number
+      required:
+        - netPnl
+        - grossPnl
+        - totalTrades
+        - winningTrades
+        - losingTrades
+        - winRate
+        - profitFactor
+        - avgWin
+        - avgLoss
+        - expectancy
+        - maxDrawdown
+        - maxDrawdownPct
+        - avgHoldingMinutes
+        - currentStreak
+        - currentStreakType
+        - longestWinStreak
+        - longestLossStreak
+        - totalCommissions
+        - sharpeRatio
+
+    EquityCurvePoint:
+      type: object
+      properties:
+        date:
+          type: string
+        cumulativePnl:
+          type: number
+        drawdown:
+          type: number
+        drawdownPct:
+          type: number
+        dailyPnl:
+          type: number
+        tradeCount:
+          type: integer
+      required:
+        - date
+        - cumulativePnl
+        - drawdown
+        - drawdownPct
+        - dailyPnl
+        - tradeCount
+
+    EquityCurveResponse:
+      type: object
+      properties:
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquityCurvePoint"
+        startingBalance:
+          type: number
+      required:
+        - points
+        - startingBalance
+
+    HeatmapCell:
+      type: object
+      properties:
+        hour:
+          type: integer
+        dayOfWeek:
+          type: integer
+        pnl:
+          type: number
+        tradeCount:
+          type: integer
+        winRate:
+          type: number
+      required:
+        - hour
+        - dayOfWeek
+        - pnl
+        - tradeCount
+        - winRate
+
+    HeatmapResponse:
+      type: object
+      properties:
+        cells:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeatmapCell"
+      required:
+        - cells
+
+    SymbolPerformance:
+      type: object
+      properties:
+        symbol:
+          type: string
+        netPnl:
+          type: number
+        tradeCount:
+          type: integer
+        winRate:
+          type: number
+        avgPnl:
+          type: number
+      required:
+        - symbol
+        - netPnl
+        - tradeCount
+        - winRate
+        - avgPnl
+
+    SymbolPerformanceResponse:
+      type: object
+      properties:
+        symbols:
+          type: array
+          items:
+            $ref: "#/components/schemas/SymbolPerformance"
+        topWinners:
+          type: array
+          items:
+            $ref: "#/components/schemas/SymbolPerformance"
+        topLosers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SymbolPerformance"
+      required:
+        - symbols
+        - topWinners
+        - topLosers
+
+    CalendarDay:
+      type: object
+      properties:
+        date:
+          type: string
+        netPnl:
+          type: number
+        tradeCount:
+          type: integer
+        isWinDay:
+          type: boolean
+      required:
+        - date
+        - netPnl
+        - tradeCount
+        - isWinDay
+
+    CalendarResponse:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarDay"
+        monthlyNetPnl:
+          type: number
+        tradingDays:
+          type: integer
+        winDays:
+          type: integer
+        lossDays:
+          type: integer
+      required:
+        - days
+        - monthlyNetPnl
+        - tradingDays
+        - winDays
+        - lossDays
+
+    MistakeDistribution:
+      type: object
+      properties:
+        tag:
+          type: string
+        count:
+          type: integer
+        totalLoss:
+          type: number
+        percentage:
+          type: number
+      required:
+        - tag
+        - count
+        - totalLoss
+        - percentage
+
+    EmotionPerformance:
+      type: object
+      properties:
+        emotion:
+          type: string
+        netPnl:
+          type: number
+        tradeCount:
+          type: integer
+        winRate:
+          type: number
+      required:
+        - emotion
+        - netPnl
+        - tradeCount
+        - winRate
+
+    SetupPerformance:
+      type: object
+      properties:
+        setup:
+          type: string
+        netPnl:
+          type: number
+        tradeCount:
+          type: integer
+        winRate:
+          type: number
+        avgRMultiple:
+          type: number
+      required:
+        - setup
+        - netPnl
+        - tradeCount
+        - winRate
+        - avgRMultiple
+
+    BehavioralAnalytics:
+      type: object
+      properties:
+        mistakeDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/MistakeDistribution"
+        emotionPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmotionPerformance"
+        setupPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/SetupPerformance"
+        assetClassPerformance:
+          type: array
+          items:
+            type: object
+            properties:
+              assetClass:
+                type: string
+              netPnl:
+                type: number
+              tradeCount:
+                type: integer
+              winRate:
+                type: number
+            required:
+              - assetClass
+              - netPnl
+              - tradeCount
+              - winRate
+      required:
+        - mistakeDistribution
+        - emotionPerformance
+        - setupPerformance
+        - assetClassPerformance
+
+    Goal:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [PNL, WIN_RATE, PROFIT_FACTOR, TRADE_COUNT, MAX_LOSS]
+        name:
+          type: string
+        targetValue:
+          type: number
+        currentValue:
+          type: number
+        period:
+          type: string
+          enum: [DAILY, WEEKLY, MONTHLY, YEARLY]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        isCompleted:
+          type: boolean
+        progressPct:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - name
+        - targetValue
+        - currentValue
+        - period
+        - startDate
+        - endDate
+        - isCompleted
+        - progressPct
+        - createdAt
+
+    CreateGoalRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [PNL, WIN_RATE, PROFIT_FACTOR, TRADE_COUNT, MAX_LOSS]
+        name:
+          type: string
+        targetValue:
+          type: number
+        period:
+          type: string
+          enum: [DAILY, WEEKLY, MONTHLY, YEARLY]
+        startDate:
+          type: string
+        endDate:
+          type: string
+      required:
+        - type
+        - name
+        - targetValue
+        - period
+        - startDate
+        - endDate
+
+    UpdateGoalRequest:
+      type: object
+      properties:
+        targetValue:
+          type: number
+        name:
+          type: string
+
+    Playbook:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        assetClass:
+          type: string
+          nullable: true
+        timeWindow:
+          type: string
+          nullable: true
+        rules:
+          type: object
+          nullable: true
+        tradeCount:
+          type: integer
+        winRate:
+          type: number
+        netPnl:
+          type: number
+        avgRMultiple:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - tradeCount
+        - winRate
+        - netPnl
+        - avgRMultiple
+        - createdAt
+
+    CreatePlaybookRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        assetClass:
+          type: string
+          nullable: true
+        timeWindow:
+          type: string
+          nullable: true
+        rules:
+          type: object
+          nullable: true
+      required:
+        - name
+
+    UpdatePlaybookRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        assetClass:
+          type: string
+          nullable: true
+        timeWindow:
+          type: string
+          nullable: true
+        rules:
+          type: object
+          nullable: true
+
+    Insight:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        detail:
+          type: string
+          nullable: true
+        severity:
+          type: string
+          enum: [warning, tip, info, danger]
+        tradesAffected:
+          type: integer
+        category:
+          type: string
+          enum: [timing, psychology, risk, consistency, performance]
+        metric:
+          type: string
+          nullable: true
+      required:
+        - id
+        - message
+        - severity
+        - tradesAffected
+        - category
+
+    InsightsResponse:
+      type: object
+      properties:
+        insights:
+          type: array
+          items:
+            $ref: "#/components/schemas/Insight"
+        generatedAt:
+          type: string
+      required:
+        - insights
+        - generatedAt
+
+    AiSummarizeRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+        tradeContext:
+          type: string
+          nullable: true
+      required:
+        - notes
+
+    AiSummarizeResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+        keyLesson:
+          type: string
+      required:
+        - summary
+        - keyLesson
+
+    WeeklyReview:
+      type: object
+      properties:
+        weekStart:
+          type: string
+        weekEnd:
+          type: string
+        netPnl:
+          type: number
+        winRate:
+          type: number
+        totalTrades:
+          type: integer
+        bestTrade:
+          $ref: "#/components/schemas/Trade"
+          nullable: true
+        worstTrade:
+          $ref: "#/components/schemas/Trade"
+          nullable: true
+        topSetup:
+          type: string
+          nullable: true
+        topMistake:
+          type: string
+          nullable: true
+        consistencyScore:
+          type: number
+        insights:
+          type: array
+          items:
+            type: string
+        equityCurve:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquityCurvePoint"
+      required:
+        - weekStart
+        - weekEnd
+        - netPnl
+        - winRate
+        - totalTrades
+        - consistencyScore
+        - insights
+        - equityCurve

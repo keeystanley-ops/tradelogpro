@@ -1,0 +1,21 @@
+packages:
+  "recharts": "Powerful, declarative charting library for equity curves and performance charts"
+  "date-fns": "Essential for formatting and manipulating dates in the trading journal"
+  "framer-motion": "For polished, premium page transitions and drawer animations"
+  "react-hook-form": "Robust form state management for adding trades and goals"
+  "@hookform/resolvers": "Zod integration for react-hook-form validation"
+  "clsx": "Utility for conditionally joining classNames"
+  "tailwind-merge": "Utility to merge tailwind classes safely"
+
+images:
+  - path: "artifacts/trading-journal/public/images/auth-bg.png"
+    description: "Dark, abstract tech-focused background with subtle glowing data lines, trading charts, and a deep professional aesthetic"
+    aspect_ratio: "16:9"
+  - path: "artifacts/trading-journal/public/images/logo-mark.png"
+    description: "Minimalist, premium logo mark for a trading app. Sharp geometric lines, glowing neon accent on dark background."
+    aspect_ratio: "1:1"
+
+notes:
+  - React Query hooks are imported from @workspace/api-client-react
+  - Using wouter for routing
+  - Assumes Shadcn components are mostly available in @/components/ui/
