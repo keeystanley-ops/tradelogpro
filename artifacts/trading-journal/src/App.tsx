@@ -11,12 +11,17 @@ import CalendarView from "@/pages/CalendarView";
 import Goals from "@/pages/Goals";
 import Playbooks from "@/pages/Playbooks";
 import WeeklyReview from "@/pages/WeeklyReview";
+import Reports from "@/pages/Reports";
+import Notebook from "@/pages/Notebook";
+import Challenges from "@/pages/Challenges";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
-      retry: 1,
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+      retry: 3,
+      refetchOnWindowFocus: true,
     },
   },
 });
@@ -28,6 +33,9 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/journal" component={Journal} />
         <Route path="/analytics" component={Analytics} />
+        <Route path="/reports" component={Reports} />
+        <Route path="/notebook" component={Notebook} />
+        <Route path="/challenges" component={Challenges} />
         <Route path="/calendar" component={CalendarView} />
         <Route path="/goals" component={Goals} />
         <Route path="/playbooks" component={Playbooks} />

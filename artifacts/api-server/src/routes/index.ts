@@ -7,6 +7,8 @@ import weeklyReviewRouter from "./weeklyReview";
 import goalsRouter from "./goals";
 import playbooksRouter from "./playbooks";
 import aiRouter from "./ai";
+import notebookRouter from "./notebook";
+import challengesRouter from "./challenges";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use("/analytics", weeklyReviewRouter);
 router.use("/goals", goalsRouter);
 router.use("/playbooks", playbooksRouter);
 router.use("/ai", aiRouter);
+router.use("/notebook", notebookRouter);
+router.use("/challenges", challengesRouter);
 
 export default router;

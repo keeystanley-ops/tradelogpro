@@ -3,6 +3,7 @@ import { formatMoney, formatNumber, formatPercent } from "@/lib/formatters";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { ArrowUpRight, ArrowDownRight, Activity, Target, Zap, Clock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ZellaScore from "@/components/ZellaScore";
 
 export default function Dashboard() {
   const { data: metrics, isLoading: isMetricsLoading } = useGetDashboardAnalytics();
@@ -170,6 +171,40 @@ export default function Dashboard() {
               />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Zella Score */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <ZellaScore />
+        </div>
+        <div className="lg:col-span-2 glass-panel rounded-2xl p-6">
+          <h3 className="text-xl font-display font-semibold mb-4">Additional Metrics</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
+              <p className="text-xs text-muted-foreground mb-1">Max Drawdown</p>
+              <p className="text-xl font-mono font-semibold text-loss">{formatMoney(metrics.maxDrawdown)}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatPercent(metrics.maxDrawdownPct)} of peak</p>
+            </div>
+            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
+              <p className="text-xs text-muted-foreground mb-1">Sharpe Ratio</p>
+              <p className="text-xl font-mono font-semibold text-foreground">{formatNumber(metrics.sharpeRatio ?? 0)}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Annualized</p>
+            </div>
+            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
+              <p className="text-xs text-muted-foreground mb-1">Avg Hold Time</p>
+              <p className="text-xl font-mono font-semibold text-foreground">{Math.round(metrics.avgHoldingMinutes)} min</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Per trade avg</p>
+            </div>
+            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
+              <p className="text-xs text-muted-foreground mb-1">Current Streak</p>
+              <p className={`text-xl font-mono font-semibold ${metrics.currentStreakType === 'WIN' ? 'text-profit' : 'text-loss'}`}>
+                {metrics.currentStreak} {metrics.currentStreakType}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Consecutive trades</p>
+            </div>
+          </div>
         </div>
       </div>
 

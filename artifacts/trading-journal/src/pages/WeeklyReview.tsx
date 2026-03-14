@@ -55,7 +55,7 @@ export default function WeeklyReview() {
 
       {isLoading ? (
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>
-      ) : !review ? (
+      ) : !review || !review.metrics ? (
         <div className="text-center py-20 text-muted-foreground">No data available for this week.</div>
       ) : (
         <>

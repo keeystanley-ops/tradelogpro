@@ -1,0 +1,699 @@
+
+
+## **1. APPLICATION ARCHITECTURE SPECIFICATIONS**
+
+### **1.1 Technology Stack Requirements**
+
+**Frontend Framework:** Use Next.js version 14 or higher for React-based server-side rendering and static site generation capabilities. This ensures optimal performance and SEO capabilities.
+
+**UI Library:** React version 18 or higher as the component framework for building interactive user interfaces.
+
+**Styling Framework:** TailwindCSS version 3.4 or higher for utility-first CSS styling that enables rapid UI development with consistent design patterns.
+
+**Component Library:** Implement shadcn/ui for pre-built accessible components that follow modern design standards and provide excellent user experience.
+
+**Charting Libraries:** Combine Recharts for general data visualization with TradingView Lightweight Charts for professional trading-specific chart displays.
+
+**State Management:** Use Zustand version 4 or higher for global state management due to its simplicity and performance benefits.
+
+**Data Fetching:** Implement TanStack Query (React Query) version 5 or higher for server state caching, background updates, and optimized data synchronization.
+
+**Form Handling:** Use React Hook Form combined with Zod for form handling and validation to ensure data integrity and excellent user input experiences.
+
+**Backend Framework:** Node.js with Express version 20 or higher for the API server to handle all backend operations.
+
+**Database:** PostgreSQL version 15 or higher as the primary data storage solution for relational data with strong consistency guarantees.
+
+**ORM:** Prisma version 5 or higher as the database ORM for type-safe database queries and migrations.
+
+**Caching Layer:** Redis version 7 or higher for session management and query caching to improve response times.
+
+**Authentication:** NextAuth.js version 4 or higher for comprehensive authentication handling including OAuth for broker connections.
+
+**File Storage:** AWS S3 or Cloudflare R2 for storing trade screenshots, exported reports, and user uploads.
+
+**Real-time Communication:** Socket.io version 4 or higher for live P&L updates and real-time data synchronization.
+
+**Hosting:** Deploy frontend on Vercel and backend on AWS or Railway for optimal performance and scalability.
+
+### **1.2 Application Structure**
+
+The application should follow a monorepo structure with separate applications for the web frontend, API backend, and background worker processes. Shared packages should contain common types, utilities, and UI components that are used across multiple applications.
+
+The web application should organize pages into authentication flows (login, register, reset password), dashboard sections (dashboard, journal, trade log, reports, insights, notebook, playbook, challenges, trade replay, backtesting, settings), API routes, and shared components.
+
+Components should be organized by feature area including UI components, charts, dashboard widgets, journal components, trade log components, reports components, navigation elements, and shared utilities.
+
+The backend should follow a clean architecture with separate controllers, services, models, routes, middleware, and utility folders. Database schema should be defined in Prisma with proper migrations.
+
+Background workers should handle broker integrations, trade imports, and export processes separately from the main application to ensure responsiveness.
+
+---
+
+## **2. DESIGN SYSTEM SPECIFICATIONS**
+
+### **2.1 Color Palette**
+
+**Primary Colors:** Use Indigo-500 (hex #6366f1) as the primary brand color, with Indigo-600 for hover states and Indigo-100 for light backgrounds.
+
+**Success and Profit Colors:** Use Emerald-500 (hex #10b981) for profitable trades and positive metrics, with Emerald-100 for light backgrounds and Emerald-700 for dark variants.
+
+**Danger and Loss Colors:** Use Red-500 (hex #ef4444) for losing trades and negative metrics, with Red-100 for light backgrounds and Red-700 for dark variants.
+
+**Neutral Colors:** Use white for main backgrounds, light gray (hex #f8fafc) for secondary backgrounds, medium gray (hex #e2e8f0) for borders, dark gray (hex #0f172a) for primary text, medium-dark gray (hex #64748b) for secondary text, and light-medium gray (hex #94a3b8) for muted text.
+
+**Sidebar Colors:** Use Slate-900 (hex #0f172a) for sidebar background, Slate-800 (hex #1e293b) for hover states, white-gray (hex #f1f5f9) for sidebar text, and medium gray (hex #94a3b8) for muted sidebar text.
+
+**Chart Colors:** Use medium gray (hex #e2e8f0) for grid lines, Emerald-500 for profit indicators, Red-500 for loss indicators, and Indigo-500 for neutral data points.
+
+**Dark Mode:** All colors should have dark mode variants that invert the background and text colors appropriately while maintaining the same semantic meaning for success, danger, and primary colors.
+
+### **2.2 Typography**
+
+**Font Family:** Use Inter as the primary sans-serif font with system UI fonts as fallbacks. Use JetBrains Mono or Fira Code for monospace text such as numbers and code.
+
+**Font Sizes:** Implement a consistent scale starting at 12 pixels for extra small text, 14 pixels for small text, 16 pixels for base text, 18 pixels for large text, 20 pixels for extra large text, 24 pixels for 2x large text, 30 pixels for 3x large text, and 36 pixels for 4x large text.
+
+**Font Weights:** Use 400 for normal weight, 500 for medium weight, 600 for semibold weight, and 700 for bold weight.
+
+**Line Heights:** Maintain consistent line heights of 1.5 for body text and 1.2 for headings to ensure readability.
+
+### **2.3 Spacing System**
+
+Implement an 8-point grid system with spacing values of 4 pixels, 8 pixels, 12 pixels, 16 pixels, 20 pixels, 24 pixels, 32 pixels, 40 pixels, 48 pixels, and 64 pixels. All margins, paddings, and gaps should align to this system for visual consistency.
+
+### **2.4 Component Specifications**
+
+**Metric Card Component:** Each metric card should have a minimum height of 120 pixels with 24 pixels of padding on all sides. Border radius should be 12 pixels with a 1 pixel border using the border color variable. Background should be white with a subtle box shadow. The title should be 14 pixels, medium weight, in secondary text color. The value should be 32 pixels, bold, in primary text color. Subtitle should be 12 pixels, normal weight, in muted text color. Trend indicators should be 12 pixels, medium weight, color-coded based on direction.
+
+**Data Table Component:** Row height should be 56 pixels with cell padding of 12 pixels horizontally and 16 pixels vertically. Border bottom should be 1 pixel solid using the border color. Row hover state should use the secondary background color. Selected rows should use the primary light background color. Header should have a height of 56 pixels with 12 pixel, medium weight text in secondary color.
+
+---
+
+## **3. DATABASE SCHEMA SPECIFICATIONS**
+
+### **3.1 User Management Tables**
+
+**Users Table:** Store user information including unique identifier, email address, password hash, first name, last name, avatar URL, timezone preference, currency preference, subscription plan tier, creation timestamp, and update timestamp. Email must be unique across all users.
+
+**User Settings Table:** Store individual user preferences including reference to user, default broker selection, default risk amount, default risk percentage, breakeven threshold, default commission rate, real-time P&L display preference, dashboard layout configuration, chart settings configuration, and notification preferences. Each user should have exactly one settings record.
+
+### **3.2 Broker Account Tables**
+
+**Accounts Table:** Store broker account information including unique identifier, user reference, broker name, account number, account type (live or demo), currency, current balance, current equity, active status, last synchronization timestamp, encrypted credentials, creation timestamp, and update timestamp. Multiple accounts can belong to a single user.
+
+### **3.3 Trade Tables**
+
+**Trades Table:** Store all trade information including unique identifier, user reference, account reference, symbol, asset class, direction (long or short), strategy reference, entry date, entry price, entry time, quantity, entry commission, exit date, exit price, exit time, exit commission, realized P&L, realized R multiple, unrealized P&L, unrealized R multiple, maximum favorable excursion, maximum adverse excursion, stop loss price, take profit price, risk amount, risk percentage, risk reward ratio, status (open, closed, or partial), trade type (manual, imported, or synced), notes, rating from 1 to 5 stars, screenshot URLs, setup description, mistakes array, emotions array, time in trade in minutes, creation timestamp, and update timestamp.
+
+**Trade Tags Table:** Store relationships between trades and tags including unique identifier, trade reference, tag reference, and category (setup, mistake, emotion, instrument, or custom). Each trade-tag combination should be unique.
+
+**Tags Table:** Store user-defined tags including unique identifier, user reference, tag name, category, color hex code, and creation timestamp. Tag names should be unique per user.
+
+### **3.4 Strategy Tables**
+
+**Strategies Table:** Store trading strategies including unique identifier, user reference, strategy name, description, rules as JSON object, checklist as JSON object, active status, public visibility flag, creation timestamp, and update timestamp.
+
+**Strategy Performance Table:** Store historical performance data for each strategy including unique identifier, strategy reference, date, win rate, profit factor, total trades, net P&L, and average R multiple. Each strategy-date combination should be unique.
+
+### **3.5 Journal Tables**
+
+**Journals Table:** Store journal entries including unique identifier, user reference, date, type (daily, weekly, monthly, or trade-review), title, content, mood indicator, rating from 1 to 5, associated trades, tags array, attachments array, creation timestamp, and update timestamp.
+
+**Notebooks Table:** Store general notes including unique identifier, user reference, title, content, folder designation, tags array, pinned status, creation timestamp, and update timestamp.
+
+### **3.6 Performance Tables**
+
+**Performance Snapshots Table:** Store daily performance metrics including unique identifier, user reference, date, net P&L, win rate, profit factor, total trades, winning trades count, losing trades count, average win amount, average loss amount, largest win amount, largest loss amount, Zella Score, current streak, streak type, drawdown percentage, and equity. Each user-date combination should be unique.
+
+### **3.7 Challenge Tables**
+
+**Challenges Table:** Store trading challenges including unique identifier, user reference, challenge name, description, type (consistency, profitability, or discipline), target metrics as JSON, start date, end date, status (active, completed, or failed), progress percentage, and creation timestamp.
+
+---
+
+## **4. API ENDPOINT SPECIFICATIONS**
+
+### **4.1 Authentication Endpoints**
+
+**Register Endpoint:** Accept email, password, first name, last name, and timezone. Email must be valid format and unique. Password must be minimum 8 characters. Return user object, access token, and refresh token upon successful registration.
+
+**Login Endpoint:** Accept email and password. Return user object, access token, and refresh token upon successful authentication. Implement rate limiting to prevent brute force attacks.
+
+**Refresh Token Endpoint:** Accept refresh token and return new access token and refresh token pair. Implement token rotation for security.
+
+**Logout Endpoint:** Accept authorization header with bearer token. Invalidate the token and return success confirmation.
+
+**Forgot Password Endpoint:** Accept email address. Send password reset email if email exists in system. Return success confirmation regardless of email existence to prevent user enumeration.
+
+**Reset Password Endpoint:** Accept reset token and new password. Validate token expiration and password requirements. Return success confirmation upon password update.
+
+### **4.2 Dashboard Endpoints**
+
+**Overview Endpoint:** Accept optional date range, account IDs, and asset class filters. Return net P&L, net P&L in R multiples, win rate percentage, profit factor, day win rate percentage, average win loss ratio, total trades count, winning trades count, losing trades count, Zella Score, current streak, streak type, maximum drawdown, and current equity.
+
+**Daily P&L Endpoint:** Accept start date, end date, and granularity (day, week, or month). Return array of objects containing date, P&L amount, P&L in R multiples, trade count, and win rate for each period.
+
+**Cumulative P&L Endpoint:** Accept start date and end date. Return array of objects containing date, cumulative P&L, cumulative P&L in R multiples, and equity for each date.
+
+**Zella Score Endpoint:** Return overall score from 0 to 100, breakdown by category (profitability, consistency, risk management, discipline), and historical score data with dates.
+
+### **4.3 Trade Endpoints**
+
+**List Trades Endpoint:** Accept pagination parameters (page and limit), sorting parameters (sort field and sort order), and filtering parameters (status, symbol, asset class, strategy ID, tag IDs, date range, P&L range, direction). Return trades array and pagination metadata including page, limit, total count, and total pages.
+
+**Get Trade Endpoint:** Accept trade ID. Return complete trade object including all related data (tags, notes, screenshots).
+
+**Create Trade Endpoint:** Accept account ID, symbol, asset class, direction, entry date, entry price, quantity, stop loss, take profit, risk amount, strategy ID, tag IDs, and notes. Validate all required fields and calculate derived values (R multiple, risk reward ratio). Return created trade object.
+
+**Update Trade Endpoint:** Accept trade ID and fields to update (exit price, exit date, stop loss, take profit, notes, rating, tag IDs). Recalculate P&L and related metrics. Return updated trade object.
+
+**Delete Trade Endpoint:** Accept trade ID. Soft delete the trade or permanently remove based on configuration. Return success confirmation.
+
+**Import Trades Endpoint:** Accept file upload (CSV or Excel), account ID, and column mapping configuration. Process file, validate data, create trades, and return count of imported trades, failed trades, and error messages.
+
+**Bulk Update Trades Endpoint:** Accept array of trade IDs and update object. Apply updates to all specified trades. Return count of updated trades.
+
+### **4.4 Reports Endpoints**
+
+**Summary Report Endpoint:** Accept date range and group by parameter (day, week, month, symbol, or strategy). Return aggregated summary statistics.
+
+**By Symbol Report Endpoint:** Accept date range. Return array of objects containing symbol, trade count, win rate, net P&L, average R multiple, and profit factor for each symbol.
+
+**By Strategy Report Endpoint:** Accept date range. Return array of objects containing strategy ID, strategy name, trade count, win rate, net P&L, average R multiple, and profit factor for each strategy.
+
+**By Tag Report Endpoint:** Accept date range and category filter (setup, mistake, or emotion). Return array of objects containing tag ID, tag name, trade count, win rate, net P&L, and average R multiple for each tag.
+
+**By Time Report Endpoint:** Accept date range and granularity (hour, day of week, or month). Return array of objects containing time period, trade count, win rate, and net P&L for each period.
+
+**Streaks Report Endpoint:** Accept date range. Return current streak length, current streak type, longest win streak, longest loss streak, and array of all streaks with type, length, start date, and end date.
+
+**Drawdown Report Endpoint:** Accept date range. Return maximum drawdown, maximum drawdown date, current drawdown, and drawdown history with dates and equity values.
+
+**Export Report Endpoint:** Accept date range, format (CSV, PDF, or Excel), and report type (summary, trades, or analysis). Generate file and return download URL with expiration timestamp.
+
+### **4.5 Journal Endpoints**
+
+**List Journals Endpoint:** Accept pagination parameters, type filter, and date range. Return journals array and pagination metadata.
+
+**Get Journal Endpoint:** Accept journal ID. Return complete journal object including all related data.
+
+**Create Journal Endpoint:** Accept date, type, title, content, mood, rating, trade IDs, and tags. Validate all required fields. Return created journal object.
+
+**Update Journal Endpoint:** Accept journal ID and fields to update. Return updated journal object.
+
+**Delete Journal Endpoint:** Accept journal ID. Return success confirmation.
+
+### **4.6 Strategy Endpoints**
+
+**List Strategies Endpoint:** Accept include public parameter. Return array of strategies belonging to user plus optionally public strategies.
+
+**Get Strategy Endpoint:** Accept strategy ID. Return strategy object with performance history.
+
+**Create Strategy Endpoint:** Accept name, description, rules object, checklist object, and public visibility flag. Return created strategy object.
+
+**Update Strategy Endpoint:** Accept strategy ID and fields to update. Return updated strategy object.
+
+**Delete Strategy Endpoint:** Accept strategy ID. Return success confirmation.
+
+### **4.7 Tag Endpoints**
+
+**List Tags Endpoint:** Accept optional category filter. Return array of tags belonging to user.
+
+**Create Tag Endpoint:** Accept name, category, and color. Validate name uniqueness per user. Return created tag object.
+
+**Update Tag Endpoint:** Accept tag ID and fields to update. Return updated tag object.
+
+**Delete Tag Endpoint:** Accept tag ID. Return success confirmation.
+
+### **4.8 Settings Endpoints**
+
+**Get Settings Endpoint:** Return user settings object. Create default settings if none exist.
+
+**Update Settings Endpoint:** Accept settings fields to update. Validate all values. Return updated settings object.
+
+### **4.9 Broker Integration Endpoints**
+
+**List Brokers Endpoint:** Return array of supported brokers with ID, name, logo URL, supported status, and authentication requirement flag.
+
+**Connect Broker Endpoint:** Accept broker ID and credentials object. Authenticate with broker and return success status with connected accounts.
+
+**Disconnect Broker Endpoint:** Accept broker ID and account ID. Remove credentials and return success confirmation.
+
+**Sync Broker Endpoint:** Accept optional account IDs array. Sync trades from connected brokers and return count of synced trades, new trades, updated trades, and errors.
+
+---
+
+## **5. USER INTERFACE COMPONENT SPECIFICATIONS**
+
+### **5.1 Sidebar Navigation**
+
+**Dimensions:** Sidebar should be 280 pixels wide when expanded and 72 pixels wide when collapsed. Height should be 100 viewport height units. Position should be fixed at left 0 and top 0.
+
+**Styling:** Background should use sidebar background color. Right border should be 1 pixel solid using border color. Width transition should be 0.3 seconds ease for smooth expansion and collapse.
+
+**Logo Section:** Height should be 80 pixels with horizontal padding of 24 pixels. Display should be flex with centered alignment. Logo height should be 32 pixels. Brand name should be visible only when sidebar is expanded.
+
+**Navigation Items:** Each item should have height of 48 pixels with horizontal padding of 16 pixels. Display should be flex with centered alignment and 12 pixel gap between icon and text. Icon should be 20 by 20 pixels. Text should be 14 pixels, medium weight, in sidebar text color. Hover background should use sidebar hover color. Active background should use primary color with white text. Border radius should be 8 pixels.
+
+**Menu Sections:** Organize navigation into Main section (Dashboard, Daily Journal, Trade Log, Reports, Insights), Tools section (Notebook, Playbook, Challenges, Trade Replay, Backtesting), Learning section (Zella University, Resource Center), and Settings section (Profile, Settings, Support).
+
+**User Section:** Position at bottom with height of 80 pixels and 16 pixels padding. Top border should be 1 pixel solid using border color. Avatar should be 40 by 40 pixels. Name should be 14 pixels, medium weight. Email should be 12 pixels in sidebar muted text color.
+
+### **5.2 Dashboard Metric Cards**
+
+**Layout:** Use CSS grid with auto-fit and minimum 240 pixels per card. Gap between cards should be 24 pixels. Container padding should be 24 pixels.
+
+**Card Styles:** Padding should be 24 pixels. Border radius should be 12 pixels. Border should be 1 pixel solid using border color. Background should be white. Box shadow should be subtle at 0 1px 3px with 10 percent opacity black. Transition should include box shadow and transform at 0.2 seconds.
+
+**Hover State:** Box shadow should increase to 0 4px 12px with 10 percent opacity black. Transform should translate up 2 pixels.
+
+**Content Layout:** Header should be flex with space-between justification and start alignment with 16 pixels bottom margin. Title should be 14 pixels, medium weight, in secondary text color. Icon should be 20 by 20 pixels in primary color. Value should be 32 pixels, bold, in primary text color with 8 pixels bottom margin. Subtitle should be 12 pixels, normal weight, in muted text color. Trend should be flex with centered alignment and 4 pixel gap, 12 pixels, medium weight, color-coded based on direction.
+
+### **5.3 Zella Score Triangle Chart**
+
+**Chart Type:** Radar chart in triangle configuration with three axes.
+
+**Size:** 300 pixels by 300 pixels.
+
+**Axes:** Three axes representing Win Percentage, Average Win Loss, and Profit Factor.
+
+**Scale:** 0 to 100 for all axes.
+
+**Visual Elements:** Axis color should use border color. Axis labels should be 12 pixels in secondary text color. Grid lines should use chart grid color with dashed style. Data polygon should use primary color with 30 percent opacity. Data border should use primary color with 2 pixel solid line. Data points should use primary color with 6 pixel circle.
+
+**Center Display:** Score value should be 48 pixels, bold, in primary color. Score label should be 14 pixels in secondary text color.
+
+**Legend:** Position at bottom. Items should be horizontal with 24 pixel gap. Item text should be 12 pixels in secondary text color.
+
+### **5.4 Daily P&L Bar Chart**
+
+**Chart Type:** Bar chart with dual colors for profit and loss.
+
+**Height:** 300 pixels.
+
+**Bar Width:** Dynamic based on number of data points.
+
+**Gap Between Bars:** 4 pixels.
+
+**Colors:** Profit bars should use chart profit color. Loss bars should use chart loss color. Hover state should darken by 10 percent.
+
+**Axes:** X-axis should show date labels at 12 pixels in secondary text color, rotated 45 degrees. Y-axis should show P&L values at 12 pixels in secondary text color. Grid lines should be horizontal using chart grid color with dashed style. Zero line should be solid using border color at 2 pixels.
+
+**Tooltip:** Background should use sidebar background color. Padding should be 12 pixels. Border radius should be 8 pixels. Box shadow should be 0 4px 12px with 15 percent opacity black. Content should include date at 14 pixels bold, P&L at 16 pixels color-coded, P&L R at 12 pixels, trades count at 12 pixels, and win rate at 12 pixels.
+
+**Interactions:** Hover should highlight bar and show tooltip. Click should filter trades by date. Zoom should allow drag to select range. Pan should allow drag chart left and right.
+
+### **5.5 Cumulative P&L Area Chart**
+
+**Chart Type:** Area chart with gradient fill.
+
+**Height:** 300 pixels.
+
+**Line Width:** 2 pixels.
+
+**Colors:** Area gradient should start with chart profit color at 40 percent opacity and end with chart profit color at 5 percent opacity. Line color should use chart profit color. Drawdown area should use danger color at 20 percent opacity.
+
+**Axes:** X-axis should show date labels monthly. Y-axis should show P&L values with K and M suffixes for thousands and millions. Grid lines should be horizontal using chart grid color.
+
+**Annotations:** New high should show marker with label. Maximum drawdown should show shaded area with label. Current value should show horizontal line with label.
+
+**Interactions:** Hover should show value tooltip and highlight point. Zoom should allow drag to select range. Pan should allow drag chart. Double-click should reset zoom.
+
+### **5.6 Trades Data Table**
+
+**Default Columns:** Include Date column at 120 pixels width sortable, Symbol column at 100 pixels width sortable, Direction column at 80 pixels width sortable, Entry column at 100 pixels width sortable, Exit column at 100 pixels width sortable, Quantity column at 80 pixels width sortable, P&L column at 100 pixels width sortable, R Multiple column at 80 pixels width sortable, Status column at 100 pixels width sortable, Tags column at 150 pixels width not sortable, Rating column at 100 pixels width sortable, and Actions column at 80 pixels width not sortable.
+
+**Table Styles:** Header height should be 56 pixels. Header background should use secondary background color. Header text should be 12 pixels, medium weight, in secondary text color. Row height should be 56 pixels. Row hover should use secondary background color. Row selected should use primary light background color. Cell padding should be 12 pixels vertically and 16 pixels horizontally. Border bottom should be 1 pixel solid using border color.
+
+**Cell Formatting:** Positive P&L should use success color and bold weight. Negative P&L should use danger color and bold weight. Neutral P&L should use secondary text color. Long direction should show success color badge. Short direction should show danger color badge. Open status should show primary color badge. Closed status should use muted text color badge.
+
+**Pagination:** Position at bottom-right. Page size options should include 25, 50, 100, and 200. Page numbers should be clickable with current page highlighted. Info text should show showing X-Y of Z trades format.
+
+### **5.7 Calendar View**
+
+**Calendar Grid:** 7 columns representing Sunday through Saturday. Minimum cell height should be 100 pixels. Cell padding should be 8 pixels. Border should be 1 pixel solid using border color. Border radius should be 8 pixels.
+
+**Day Cell:** Header should show day number at 14 pixels, medium weight. Today should be highlighted with primary light border. Weekend days should use secondary background color.
+
+**Trade Indicators:** Position below day number. Display as horizontal dots or mini bars. Profit days should have green background tint. Loss days should have red background tint. Breakeven days should have gray background tint. Mixed days should have gradient background.
+
+**Day Summary:** Show on hover or click. Tooltip should include date, total trades, win and loss count, net P&L, and win rate.
+
+**Month Navigation:** Previous button should show left arrow. Next button should show right arrow. Current month should be centered at 16 pixels, bold. View toggle should include month, week, and day buttons.
+
+### **5.8 Trade Detail Modal**
+
+**Modal Layout:** Width should be 800 pixels. Maximum height should be 90 viewport height units. Overflow should be auto. Border radius should be 16 pixels. Box shadow should be 0 20px 60px with 30 percent opacity black.
+
+**Header:** Height should be 72 pixels. Horizontal padding should be 24 pixels. Border bottom should be 1 pixel solid using border color. Display should be flex with space-between justification and centered alignment. Symbol should be 20 pixels, bold. Direction badge should indicate long or short. Close button should be 24 by 24 pixels.
+
+**Content Sections:** Tabs should include Overview, Chart, Notes, and Analytics. Tab height should be 48 pixels. Horizontal padding should be 24 pixels. Tab text should be 14 pixels, medium weight. Active tab should show primary color underline.
+
+**Overview Tab:** Grid should be 2 columns with 24 pixel gap. Sections should include Trade Information (Symbol, Direction, Dates, Quantity), Entry Details (Price, Time, Commission), Exit Details (Price, Time, Commission), P&L Summary (Realized, R-Multiple, ROI), Risk Management (Stop Loss, Take Profit, Risk Amount), and Tags and Rating.
+
+**Chart Tab:** Chart type should be TradingView Lightweight Charts. Height should be 400 pixels. Annotations should include entry marker, exit marker, stop loss, and take profit. Drawings should support user-added annotations.
+
+**Notes Tab:** Editor should be rich text. Attachments should show screenshot gallery. Trade journal should show linked journal entries.
+
+**Analytics Tab:** MAE and MFE should show Maximum Adverse and Favorable Excursion chart. Time analysis should show time in trade breakdown. Comparison should show versus average trade metrics.
+
+### **5.9 Add and Edit Trade Form**
+
+**Form Layout:** Width should be 600 pixels. Padding should be 32 pixels. Border radius should be 16 pixels.
+
+**Section 1 Account Selection:** Dropdown should show account name and balance. Auto-sync indicator should show connection status.
+
+**Section 2 Trade Details:** Symbol should have autocomplete with suggestions. Asset Class should be dropdown. Direction should be toggle between Long and Short. Quantity should be number input.
+
+**Section 3 Entry Information:** Entry Date should be date picker. Entry Time should be time picker. Entry Price should be number input. Commission should be number input and optional.
+
+**Section 4 Exit Information:** For closed trades only. Exit Date should be date picker. Exit Time should be time picker. Exit Price should be number input. Commission should be number input and optional.
+
+**Section 5 Risk Management:** Stop Loss should be number input with auto-calculated R display. Take Profit should be number input with auto-calculated Risk Reward display. Risk Amount should be number input. Risk Percent should be number input. Auto-calculated fields should show R-Multiple and Risk Reward ratio.
+
+**Section 6 Strategy and Tags:** Strategy should be dropdown. Tags should be multi-select with create option. Setup should be text input. Mistakes should be multi-select. Emotions should be multi-select.
+
+**Section 7 Notes:** Rich text editor for detailed notes. Screenshot upload should support drag and drop. Rating should be 1 to 5 stars.
+
+**Validation:** Required fields should be highlighted. Real-time R-multiple calculation should update as user types. Warning should show if no stop loss is set. Warning should show if risk exceeds threshold.
+
+**Actions:** Save should be primary button. Save and Add Another should be secondary button. Cancel should be text button.
+
+---
+
+## **6. ZELLA SCORE ALGORITHM SPECIFICATIONS**
+
+### **6.1 Score Calculation Methodology**
+
+The Zella Score should be calculated as a weighted combination of four categories with an overall score ranging from 0 to 100.
+
+**Profitability Category:** Weight of 35 percent. Calculate profit factor and allocate up to 15 points. Calculate average R multiple and allocate up to 10 points. Calculate win rate percentage and allocate up to 10 points. Normalize the sum to 35 points maximum.
+
+**Consistency Category:** Weight of 25 percent. Calculate day win rate and allocate up to 10 points. Calculate streak score based on win and loss streaks and allocate up to 8 points. Calculate variance score based on P&L consistency and allocate up to 7 points. Normalize the sum to 25 points maximum.
+
+**Risk Management Category:** Weight of 25 percent. Calculate average risk reward ratio and allocate up to 10 points. Calculate maximum drawdown and allocate up to 8 points with inverse scoring. Calculate position sizing consistency and allocate up to 7 points. Normalize the sum to 25 points maximum.
+
+**Discipline Category:** Weight of 15 percent. Calculate plan adherence based on rule following and allocate up to 6 points. Calculate journal completeness based on note quality and frequency and allocate up to 5 points. Calculate rule following based on stop loss usage and risk limits and allocate up to 4 points. Normalize the sum to 15 points maximum.
+
+### **6.2 Score Interpretation Guide**
+
+**Excellent Range:** 90 to 100 indicates elite trader performance with strong profitability, consistency, risk management, and discipline.
+
+**Very Good Range:** 80 to 89 indicates strong, consistent performance with minor areas for improvement.
+
+**Good Range:** 70 to 79 indicates solid performance with room to improve in specific categories.
+
+**Average Range:** 60 to 69 indicates typical trader performance with balanced strengths and weaknesses.
+
+**Below Average Range:** 50 to 59 indicates needs improvement in key areas with specific recommendations provided.
+
+**Poor Range:** 0 to 49 indicates significant issues to address with priority recommendations provided.
+
+---
+
+## **7. BROKER INTEGRATION SPECIFICATIONS**
+
+### **7.1 Supported Brokers**
+
+**MetaTrader 4:** Support forex and CFD asset classes. Authentication type should be file upload. Sync frequency should be manual. Features should include historical data and multiple accounts but not auto sync or real-time P&L.
+
+**MetaTrader 5:** Support forex, stocks, futures, and CFD asset classes. Authentication type should be file upload. Sync frequency should be manual. Features should include historical data and multiple accounts but not auto sync or real-time P&L.
+
+**NinjaTrader:** Support futures, forex, and stocks asset classes. Authentication type should be file upload. Sync frequency should be daily. Features should include auto sync, historical data, and multiple accounts but not real-time P&L.
+
+**Interactive Brokers:** Support stocks, options, futures, forex, and crypto asset classes. Authentication type should be API. Sync frequency should be real-time. Features should include auto sync, historical data, real-time P&L, and multiple accounts.
+
+**ThinkorSwim:** Support stocks, options, futures, and forex asset classes. Authentication type should be file upload. Sync frequency should be daily. Features should include auto sync, historical data, and multiple accounts but not real-time P&L.
+
+**Bybit:** Support crypto asset class. Authentication type should be API. Sync frequency should be real-time. Features should include auto sync, historical data, real-time P&L, and multiple accounts.
+
+**Binance:** Support crypto asset class. Authentication type should be API. Sync frequency should be real-time. Features should include auto sync, historical data, real-time P&L, and multiple accounts.
+
+**cTrader:** Support forex and CFD asset classes. Authentication type should be API. Sync frequency should be hourly. Features should include auto sync, historical data, real-time P&L, and multiple accounts.
+
+### **7.2 File Import Formats**
+
+**Supported Formats:** CSV, XLSX, XLS, and JSON files should be supported for trade import.
+
+**Column Mapping:** Each broker should have predefined column mappings for date, time, symbol, direction, quantity, entry price, exit price, P&L, commission, stop loss, and take profit fields. Users should be able to customize mappings for non-standard file formats.
+
+**Validation:** Imported files should be validated for required columns, data types, and date formats. Errors should be reported with specific row numbers and error messages.
+
+---
+
+## **8. USER FLOW SPECIFICATIONS**
+
+### **8.1 Onboarding Flow**
+
+**Step 1 Sign Up:** User enters email and password. System validates email format and password requirements. User verifies email through confirmation link. User completes profile with name, timezone, and currency preferences.
+
+**Step 2 Account Setup:** User optionally connects broker by selecting broker, authenticating, and selecting accounts to sync. Alternatively, user imports trades by uploading file, mapping columns, and reviewing and confirming. User can skip for manual entry.
+
+**Step 3 Preferences:** User sets default risk settings including risk amount and risk percentage. User configures dashboard layout. User sets notification preferences.
+
+**Step 4 Tutorial:** System shows platform overview. System walks through key features. System guides through first trade entry.
+
+**Step 5 Dashboard:** User lands on dashboard with welcome message and empty state guidance if no trades exist.
+
+### **8.2 Trade Entry Flow**
+
+**Step 1 Initiate:** User clicks Add Trade button. Trade form modal opens.
+
+**Step 2 Fill Trade Details:** User selects account from dropdown. User enters symbol with autocomplete suggestions. User selects direction using Long and Short toggle. User enters quantity. System optionally auto-calculates position size.
+
+**Step 3 Entry Information:** User enters entry date and time. User enters entry price. System validates all entries.
+
+**Step 4 Risk Management:** User enters stop loss and system auto-calculates R. User enters take profit and system auto-calculates Risk Reward. User enters risk amount or percent. System shows validation warnings.
+
+**Step 5 Categorization:** User selects strategy from dropdown. User adds tags for setup, emotion, and mistakes. User adds notes.
+
+**Step 6 Submit:** User can save trade, save and add another, or cancel. System confirms successful save.
+
+### **8.3 Report Generation Flow**
+
+**Step 1 Navigate:** User navigates to Reports section. System displays report categories.
+
+**Step 2 Select Report Type:** User selects from Summary, By Symbol, By Strategy, By Tag, By Time, Streaks, or Drawdown reports.
+
+**Step 3 Configure Filters:** User sets date range. User optionally filters by accounts, asset classes, symbols, strategies, and tags.
+
+**Step 4 Generate Report:** System shows loading state. System displays results with charts and tables.
+
+**Step 5 Export:** User optionally selects format from CSV, PDF, or Excel. User downloads file. User optionally shares link.
+
+---
+
+## **9. RESPONSIVE DESIGN SPECIFICATIONS**
+
+### **9.1 Breakpoint Definitions**
+
+**Mobile Breakpoint:** Maximum width of 640 pixels. Sidebar should be hidden with hamburger menu toggle. Metric cards should display in 1 column. Tables should have horizontal scroll. Charts should be full width with reduced height. Modals should be full screen.
+
+**Tablet Breakpoint:** Minimum width of 641 pixels and maximum width of 1024 pixels. Sidebar should be collapsed by default. Metric cards should display in 2 columns. Tables should have optimized columns. Charts should be medium size. Modals should be 90 percent width.
+
+**Desktop Breakpoint:** Minimum width of 1025 pixels. Sidebar should be expanded. Metric cards should display in 4 to 5 columns. Tables should show full columns. Charts should be large size. Modals should have fixed width.
+
+**Large Desktop Breakpoint:** Minimum width of 1440 pixels. Maximum content width should be 1600 pixels. Spacing should increase. Fonts should scale larger.
+
+### **9.2 Mobile-Specific Considerations**
+
+**Mobile Navigation:** Hamburger menu icon should be visible. Sidebar should slide out on toggle. Bottom navigation bar is optional. Touch-friendly tap targets should be minimum 44 pixels.
+
+**Mobile Tables:** Horizontal scroll container should be implemented. First column should be sticky. Card view alternative should be available. Swipe actions should be supported.
+
+**Mobile Charts:** Tooltips should be simplified. Pinch to zoom should be enabled. Touch drag to pan should be enabled. Data points should be reduced for performance.
+
+**Mobile Forms:** Inputs should be full width. Touch targets should be larger. Keyboards should be optimized for input types. Modals should display as bottom sheets.
+
+---
+
+## **10. PERFORMANCE REQUIREMENTS**
+
+### **10.1 Loading Time Targets**
+
+**Initial Page Load:** Less than 2 seconds from navigation to fully interactive page.
+
+**Dashboard:** Less than 1.5 seconds from navigation to fully rendered dashboard with all metrics.
+
+**Trade Log:** Less than 2 seconds from navigation to fully loaded trade table.
+
+**Reports:** Less than 3 seconds from navigation to fully generated report.
+
+**Trade Detail Modal:** Less than 500 milliseconds from click to fully rendered modal.
+
+**Chart Rendering:** Less than 1 second for all charts to render and become interactive.
+
+### **10.2 Caching Strategy**
+
+**Query Stale Time:** 5 minutes before data is considered stale and refetched in background.
+
+**Query Cache Time:** 30 minutes before data is removed from cache.
+
+**Refetch on Window Focus:** Enabled to ensure fresh data when user returns to tab.
+
+**Retry Count:** 3 retries for failed queries with exponential backoff.
+
+**Mutation Retry Count:** 1 retry for failed mutations.
+
+**Cache Keys:** Should include user ID, date range, filters, and report type for proper invalidation.
+
+### **10.3 Optimization Techniques**
+
+**Virtual Scrolling:** Implement for large tables to render only visible rows.
+
+**Chart Data Sampling:** Sample data points when exceeding maximum display points to maintain performance.
+
+**Lazy Loading:** Implement for heavy components like Trade Detail Modal and Reports Page.
+
+**Image Optimization:** Use WebP format, responsive images, lazy loading, and CDN delivery.
+
+**Code Splitting:** Split code by route and feature to reduce initial bundle size.
+
+**Service Worker:** Implement for offline support and faster repeat visits.
+
+---
+
+## **11. SECURITY REQUIREMENTS**
+
+### **11.1 Authentication Security**
+
+**JWT Configuration:** Use RS256 algorithm. Access token expiry should be 15 minutes. Refresh token expiry should be 7 days. Refresh token rotation should be enabled.
+
+**Password Requirements:** Minimum 8 characters. Require uppercase letters. Require lowercase letters. Require numbers. Require special characters.
+
+**Session Management:** Maximum 5 concurrent sessions per user. Idle timeout should be 30 minutes. Absolute timeout should be 24 hours.
+
+### **11.2 Data Protection**
+
+**Encryption at Rest:** Use AES-256 encryption for all stored data.
+
+**Encryption in Transit:** Use TLS 1.3 for all network communication.
+
+**Broker Credentials:** Use AES-256-GCM encryption for stored broker credentials.
+
+**Rate Limiting:** Limit to 100 requests per minute per user.
+
+**CORS:** Whitelist domains only.
+
+**CSRF Protection:** Implement double-submit cookie pattern.
+
+**Input Validation:** Use Zod schemas for all input validation.
+
+**SQL Injection Prevention:** Use parameterized queries throughout.
+
+**Audit Logging:** Log login attempts, data exports, settings changes, and trade modifications.
+
+---
+
+## **12. TESTING REQUIREMENTS**
+
+### **12.1 Test Coverage Targets**
+
+**Unit Tests:** 80 percent code coverage minimum.
+
+**Integration Tests:** 70 percent code coverage minimum.
+
+**End-to-End Tests:** All critical user paths must be covered.
+
+**Accessibility:** WCAG 2.1 AA compliance required.
+
+### **12.2 Critical Test Scenarios**
+
+User registration and email verification flow must be tested. User login and logout flow must be tested. Password reset flow must be tested. Manual trade entry flow must be tested. Trade import from CSV flow must be tested. Broker connection and sync flow must be tested. Dashboard metrics calculation must be tested. Report generation and export flow must be tested. Journal entry creation flow must be tested. Strategy creation and tracking flow must be tested. Tag management flow must be tested. Settings updates flow must be tested. Zella score calculation must be tested. Calendar view rendering must be tested. Trade detail modal flow must be tested. Bulk trade operations must be tested. Data filtering and sorting must be tested. Responsive layout on all breakpoints must be tested.
+
+---
+
+## **13. ANALYTICS AND TRACKING SPECIFICATIONS**
+
+### **13.1 Events to Track**
+
+**Authentication Events:** Track user signed up with method, user logged in with method, and user logged out.
+
+**Trade Events:** Track trade created with method (manual, import, or sync), trade updated with fields changed, trade deleted, and trades imported with count and broker.
+
+**Dashboard Events:** Track dashboard viewed with date range and metric card clicked with metric name.
+
+**Report Events:** Track report generated with type and filters, and report exported with type and format.
+
+**Journal Events:** Track journal entry created with type and journal entry updated.
+
+**Settings Events:** Track settings updated with category, broker connected with broker name, and broker disconnected with broker name.
+
+**Feature Events:** Track Zella score viewed with score value, trade replay started, and challenge created with type.
+
+---
+
+## **14. DEVELOPMENT PHASES AND DELIVERABLES**
+
+### **Phase 1 MVP (Weeks 1 to 4)**
+
+User authentication including register, login, and logout must be complete. Basic dashboard with metric cards must be complete. Manual trade entry form must be complete. Trade log table with basic filtering must be complete. Simple P&L chart must be complete. User settings page must be complete.
+
+### **Phase 2 Core Features (Weeks 5 to 8)**
+
+CSV and Excel trade import must be complete. Advanced filtering and sorting must be complete. Trade detail modal must be complete. Tag management system must be complete. Strategy tracking must be complete. Journal entries must be complete. Calendar view must be complete.
+
+### **Phase 3 Analytics (Weeks 9 to 12)**
+
+Zella Score calculation must be complete. 10 or more report types must be complete. Report export in CSV and PDF must be complete. Advanced charts including radar, area, and bar must be complete. Performance comparisons must be complete. Streak tracking must be complete.
+
+### **Phase 4 Integrations (Weeks 13 to 16)**
+
+Broker API integrations for 3 or more brokers must be complete. Auto-sync functionality must be complete. Real-time P&L updates must be complete. File upload for additional brokers must be complete. Multi-account support must be complete.
+
+### **Phase 5 Polish (Weeks 17 to 20)**
+
+Trade replay feature must be complete. Challenges system must be complete. Mobile responsiveness must be complete. Performance optimizations must be complete. Accessibility improvements must be complete. Documentation must be complete.
+
+---
+
+## **15. SUCCESS METRICS**
+
+**User Activation Rate:** Target greater than 60 percent of registered users completing onboarding.
+
+**Day 7 Retention:** Target greater than 40 percent of users returning within 7 days.
+
+**Day 30 Retention:** Target greater than 25 percent of users returning within 30 days.
+
+**Trades Logged per User per Month:** Target greater than 50 trades per active user monthly.
+
+**Report Views per User per Month:** Target greater than 10 report views per active user monthly.
+
+**Net Promoter Score:** Target greater than 50.
+
+**Page Load Time:** Target less than 2 seconds.
+
+**API Response Time at 95th Percentile:** Target less than 500 milliseconds.
+
+**Error Rate:** Target less than 1 percent of requests.
+
+---
+
+## **16. FINAL DEVELOPMENT INSTRUCTIONS**
+
+**Step 1:** Start with the database schema. Define all models and relationships in Prisma before writing any application code.
+
+**Step 2:** Build authentication first. Create a secure foundation for all features before implementing any user-facing functionality.
+
+**Step 3:** Create reusable components. Build metric cards, tables, charts, and forms as reusable components before implementing specific features.
+
+**Step 4:** Implement core dashboard. Display key metrics and charts to establish the main user experience.
+
+**Step 5:** Add trade management. Implement create, read, update, and delete operations for trades.
+
+**Step 6:** Build reporting engine. Calculate and display analytics across all report types.
+
+**Step 7:** Integrate brokers. Start with file upload functionality, then implement API connections.
+
+**Step 8:** Polish user interface and experience. Ensure consistent design and smooth interactions throughout.
+
+**Step 9:** Optimize performance. Implement caching, lazy loading, and code splitting.
+
+**Step 10:** Test thoroughly. Write unit tests, integration tests, and end-to-end tests.
+
+**Step 11:** Document everything. Create API documentation, user guides, and code comments.
+
+**Step 12:** Deploy and monitor. Set up CI and CD pipelines, error tracking, and analytics.
+
+---
