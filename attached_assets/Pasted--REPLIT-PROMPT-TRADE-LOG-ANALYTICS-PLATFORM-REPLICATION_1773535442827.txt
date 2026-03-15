@@ -1,0 +1,139 @@
+# **REPLIT PROMPT: TRADE LOG ANALYTICS PLATFORM REPLICATION**
+
+---
+
+## **OBJECTIVE**
+
+Build a fully functional Trade Log analytics dashboard that precisely replicates the layout, design aesthetic, and functionality of the provided reference screenshot. The application must be a production-ready trading performance tracking interface with a clean, professional financial SaaS appearance. Every visual element and interactive component visible in the screenshot must be implemented and fully functional.
+
+---
+
+## **DESIGN LANGUAGE AND THEME**
+
+**Typography:** Use a modern, clean sans-serif font family such as Inter, system UI fonts, or similar that aligns with professional financial applications. Ensure consistent font weighting throughout the application—use medium weight for labels and headers, bold for key metrics and values, and normal weight for table content. The typography must feel cohesive and readable across all sections.
+
+**Color Palette:** Maintain a light mode theme with white backgrounds for cards and tables, and a very light gray for the main page background to create subtle separation. Use semantic colors strictly for financial data: green for positive values, winning trades, and profit indicators; red for negative values, losing trades, and loss indicators. Use neutral grays for secondary text, borders, and inactive states. Use a primary brand color for interactive elements like buttons and links.
+
+**Spacing and Layout:** Use a consistent spacing system throughout the application to ensure visual harmony. Margins and padding should feel breathable but compact enough to display data densely. Use responsive grid layouts for the metric cards and flexible table structures that adapt to content width. Avoid hardcoded dimensions; use relative sizing and flexbox or grid systems to ensure elements align proportionally.
+
+**Visual Style:** Cards should have subtle borders and soft shadows to create depth. Inputs and dropdowns should have clean borders with rounded corners. Badges and status indicators should be pill-shaped or slightly rounded. The overall feel should be crisp, modern, and data-focused.
+
+---
+
+## **HEADER SECTION**
+
+**Page Title:** Display "Trade Log" prominently at the top left of the content area using a larger, semibold font weight.
+
+**Header Controls:** Align three dropdown controls to the top right of the header.
+1.  **Filters:** A dropdown button with a filter icon and label, allowing users to filter trade data.
+2.  **Date Range:** A dropdown button with a calendar icon and label, allowing users to select time periods.
+3.  **Account Selector:** A dropdown button showing the current account name (e.g., "Demo account") with an icon, allowing users to switch between trading accounts.
+
+Ensure these controls are visually consistent in height and styling, with clear hover states and dropdown indicators.
+
+---
+
+## **METRIC CARDS SECTION**
+
+Display a row of four key performance metric cards below the header. Each card must have a label, a primary value, and a unique data visualization element.
+
+**Card 1: Net Cumulative P&L**
+-   **Label:** Display "Net cumulative P&L" as a subtle header.
+-   **Value:** Show the total monetary value prominently.
+-   **Visualization:** Include a mini area chart below the value showing the trend over time with a gradient fill.
+
+**Card 2: Profit Factor**
+-   **Label:** Display "Profit factor" with an information tooltip icon.
+-   **Value:** Show the ratio number prominently.
+-   **Visualization:** Include a circular gauge or ring chart to the right indicating the metric level.
+
+**Card 3: Trade Win Percentage**
+-   **Label:** Display "Trade win %" with an information tooltip icon.
+-   **Value:** Show the percentage prominently.
+-   **Visualization:** Include a semi-circular gauge to the right. Below the gauge, show small numerical breakdowns for wins, breakevens, and losses.
+
+**Card 4: Average Win/Loss Trade**
+-   **Label:** Display "Avg win/loss trade" with an information tooltip icon.
+-   **Value:** Show the ratio prominently.
+-   **Visualization:** Include a horizontal bar chart below or beside the value showing the average win amount in green and average loss amount in red.
+
+Ensure all cards align horizontally on desktop and stack responsively on smaller screens.
+
+---
+
+## **TRADE TABLE SECTION**
+
+**Table Toolbar:** Above the table, include a settings icon button on the right for column customization and a "Bulk actions" dropdown button that becomes active when rows are selected.
+
+**Table Columns:** Implement the following columns in order, ensuring all are sortable unless specified:
+1.  **Checkbox:** For row selection and select-all functionality.
+2.  **Open Date:** Display formatted date, sortable.
+3.  **Symbol:** Display trading symbol in bold, sortable.
+4.  **Status:** Display badge indicating WIN or LOSS. WIN badges should be green-themed, LOSS badges should be red-themed. Sortable.
+5.  **Close Date:** Display formatted date, sortable.
+6.  **Entry Price:** Display formatted price, sortable.
+7.  **Exit Price:** Display formatted price, sortable.
+8.  **Net P&L:** Display monetary value color-coded green for profit and red for loss. Sortable.
+9.  **Net ROI:** Display percentage color-coded green for profit and red for loss. Sortable.
+10. **Zella Insights:** Placeholder column for future AI insights.
+11. **Zella Scale:** Display a horizontal visual bar indicating trade quality score, color-coded based on performance.
+
+**Table Styling:** Rows should have adequate height for readability. Use alternating row backgrounds or hover effects to distinguish rows. Align numerical data to the right or left consistently. Ensure text truncation handles long symbols or notes gracefully.
+
+---
+
+## **PAGINATION SECTION**
+
+Below the table, implement a comprehensive pagination bar.
+
+**Left Side:** Include a "Trades per page" dropdown selector and text indicating the current range and total count (e.g., "1 - 50 of 112 trades").
+
+**Right Side:** Include page navigation controls showing the current page number, total pages, and previous/next arrow buttons. Disable previous/next buttons appropriately when at the start or end of the list.
+
+Ensure the pagination bar is visually separated from the table with a border or spacing.
+
+---
+
+## **FUNCTIONAL REQUIREMENTS**
+
+**Sorting:** All designated columns must support sorting by clicking the header. Toggle between ascending, descending, and no sort. Display visual indicators (arrows) showing the current sort direction.
+
+**Filtering:** The Filters dropdown must open a panel allowing users to filter by symbol, status, date range, P&L range, and other criteria. Filters must apply immediately to the table and metric calculations.
+
+**Row Selection:** Users must be able to select individual rows via checkboxes. The header checkbox must select or deselect all visible rows. When rows are selected, the Bulk actions button must become enabled.
+
+**Bulk Actions:** The Bulk actions dropdown must offer options like Export, Delete, or Tag Selected. These actions must perform the intended operation on the selected rows.
+
+**Account Switching:** The Account dropdown must allow switching between different accounts. Switching accounts must reload the trade data and recalculate all metrics for the selected account.
+
+**Date Range:** The Date range dropdown must allow selecting predefined periods or a custom range. Changing the date range must filter the table and update all metric cards.
+
+**Responsiveness:** The layout must adapt to different screen sizes. On smaller screens, metric cards should stack, and the table should support horizontal scrolling or card view conversion.
+
+---
+
+## **SPECIFIC FIXES AND INSTRUCTIONS**
+
+**Goal Sections Issue:** There are known issues with goal sections in the current codebase where they are not functioning correctly. You must address this by either fully implementing the goal tracking functionality with proper state management and UI updates, or completely removing any goal-related sections from the interface until they can be properly built. Do not leave non-functional or broken goal elements in the application.
+
+**Feature Completeness:** Every single element visible in the provided screenshot must be present in the application. Do not omit any columns, buttons, metrics, or visualizations. The final product must look and behave like the reference image.
+
+**Font Consistency:** Ensure that the fonts used throughout the application go hand in hand with the theme. Do not mix conflicting font families. The typography should feel unified across the header, metrics, table, and pagination.
+
+**Data Accuracy:** All metrics displayed in the cards must be calculated dynamically based on the trade data shown in the table. Do not use static hardcoded values for the metrics.
+
+---
+
+## **DATA AND STATE MANAGEMENT**
+
+**Mock Data:** Generate realistic sample trade data to populate the table initially. Include a mix of winning and losing trades, various symbols (stocks and futures), and different dates to demonstrate the filtering and sorting capabilities.
+
+**State Management:** Implement proper state management for table data, filters, sorting, pagination, and row selection. Ensure that changing one state (like a filter) correctly updates dependent states (like pagination and metrics).
+
+**Performance:** Ensure the table renders efficiently even with larger datasets. Implement pagination logic to handle data in chunks rather than loading all trades at once if the dataset grows.
+
+---
+
+## **FINAL DELIVERABLE**
+
+The final output must be a fully interactive Trade Log page that matches the reference screenshot in layout and functionality. All buttons must click, all dropdowns must open, all sorts must work, and all metrics must calculate correctly. The design must be polished with consistent typography and spacing, and the known issue regarding goal sections must be resolved.

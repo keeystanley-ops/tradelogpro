@@ -105,7 +105,9 @@ export default function Goals() {
 function AddGoalModal({ open, onOpenChange }: { open: boolean, onOpenChange: (o: boolean) => void }) {
   const createMutation = useCreateGoal();
   const queryClient = useQueryClient();
-  const { register, handleSubmit, setValue, reset } = useForm();
+  const { register, handleSubmit, setValue, reset } = useForm({
+    defaultValues: { type: "PNL", period: "MONTHLY" }
+  });
 
   const onSubmit = (data: any) => {
     // API expects full CreateGoalRequest
