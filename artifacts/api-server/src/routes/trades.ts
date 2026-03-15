@@ -165,6 +165,66 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.post("/import", async (req, res) => {
+  try {
+    const { trades: rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: "No trades provided" });
+    }
+
+    let imported = 0;
+    let failed = 0;
+
+    for (const row of rows) {
+      try {
+        const sym = String(row.symbol || "").toUpperCase();
+        if (!sym) { failed++; continue; }
+
+        const dir = String(row.direction || "LONG").toUpperCase() === "SHORT" ? "SHORT" : "LONG";
+        const qty = Math.abs(parseFloat(row.quantity) || 1);
+        const entry = parseFloat(row.entryPrice) || 0;
+        const exit = parseFloat(row.exitPrice) || 0;
+
+        const entryTime = row.entryDate ? new Date(row.entryDate) : new Date();
+        const exitTime = row.exitDate ? new Date(row.exitDate) : entryTime;
+        if (isNaN(entryTime.getTime())) { failed++; continue; }
+
+        const grossPnl = calcPnl(dir, qty, entry, exit);
+        const comm = Math.abs(parseFloat(row.commission) || 0);
+        const netPnl = parseFloat(row.netPnl as any) || grossPnl - comm;
+        const durationSeconds = Math.max(0, Math.floor((exitTime.getTime() - entryTime.getTime()) / 1000));
+
+        await db.insert(tradesTable).values({
+          symbol: sym,
+          assetClass: "STOCK",
+          direction: dir as "LONG" | "SHORT",
+          quantity: qty.toString(),
+          entryPrice: entry.toString(),
+          exitPrice: exit.toString(),
+          entryTime,
+          exitTime,
+          durationSeconds,
+          grossPnl: grossPnl.toFixed(4),
+          netPnl: netPnl.toFixed(4),
+          commissions: comm.toFixed(4),
+          fees: "0",
+          slippage: "0",
+          status: "CLOSED",
+          importSource: "CSV",
+        });
+        imported++;
+      } catch {
+        failed++;
+      }
+    }
+
+    res.json({ imported, failed, total: rows.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Import failed" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const [trade] = await db.select().from(tradesTable).where(eq(tradesTable.id, parseInt(req.params.id)));

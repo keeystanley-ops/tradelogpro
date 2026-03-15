@@ -1,0 +1,741 @@
+
+
+# **PART 1: MISSING MVP FEATURES**
+
+## **🔴 CRITICAL MVP FEATURES (Build First)**
+
+### **1. Broker Integration System**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | CRITICAL | HIGH |
+
+**What's Missing:**
+- Broker connection page with list of supported brokers
+- API authentication flow for each broker
+- Auto-sync functionality for trade import
+- Sync status indicators
+- Last sync timestamp display
+- Error handling for failed connections
+
+**MVP Requirement:**
+- Support at least 3 popular brokers (MetaTrader, Interactive Brokers, Binance)
+- Manual file upload as fallback (CSV/Excel)
+- Sync status dashboard showing connected accounts
+
+---
+
+### **2. Trade Import/Export System**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | CRITICAL | MEDIUM |
+
+**What's Missing:**
+- CSV file upload with column mapping
+- Excel file support
+- Broker statement import templates
+- Export trades to CSV/PDF
+- Import validation and error reporting
+- Duplicate trade detection
+
+**MVP Requirement:**
+- CSV import with predefined broker templates
+- Column mapping interface
+- Import preview before confirmation
+- Export current view to CSV
+
+---
+
+### **3. Detailed Trade View Page**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| PARTIAL | CRITICAL | MEDIUM |
+
+**What's Missing:**
+- Dedicated trade detail page (currently may only have modal)
+- Multiple tabs: Overview, Chart, Notes, Analytics, Executions
+- Entry/exit visualization on chart
+- Trade timeline with events
+- Related trades from same day
+- Quick navigation between trades
+
+**MVP Requirement:**
+- Full-page trade detail view
+- Chart with entry/exit markers
+- Editable notes section
+- All trade metadata displayed
+
+---
+
+### **4. Advanced Filtering System**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| PARTIAL | CRITICAL | MEDIUM |
+
+**What's Missing:**
+- Multi-criteria filter panel
+- Filter by symbol, status, date range, P&L range
+- Filter by strategy/playbook
+- Filter by tags (emotions, mistakes, setups)
+- Save filter presets
+- Active filter indicators
+- Clear all filters button
+
+**MVP Requirement:**
+- Expandable filter panel
+- At least 5 filter criteria
+- Visual indication of active filters
+- Filter count badge on filter button
+
+---
+
+### **5. Zella Score System**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | HIGH | MEDIUM |
+
+**What's Missing:**
+- 0-100 trading health score calculation
+- Score breakdown by category (profitability, consistency, risk, discipline)
+- Score history chart
+- Score improvement recommendations
+- Visual score gauge on dashboard
+
+**MVP Requirement:**
+- Calculate score from trade data
+- Display on dashboard
+- Show category breakdown
+- Track score over time
+
+---
+
+### **6. Trading Playbook**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | HIGH | MEDIUM |
+
+**What's Missing:**
+- Create/edit trading strategies
+- Define entry rules checklist
+- Define exit rules checklist
+- Attach trades to playbooks
+- Track playbook performance separately
+- Rule compliance tracking
+
+**MVP Requirement:**
+- Create playbook with name and rules
+- Link trades to playbook
+- View playbook-specific metrics
+
+---
+
+### **7. Daily Journal**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | HIGH | LOW |
+
+**What's Missing:**
+- Separate daily journal entries (not tied to individual trades)
+- Pre-market preparation template
+- Post-market review template
+- Mental state/mood tracking
+- Daily goals and outcomes
+- Journal entries linked to all trades of that day
+
+**MVP Requirement:**
+- Create daily journal entry
+- Link to trades from that day
+- Basic template with mood and notes
+
+---
+
+### **8. Extended Reports Library**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| PARTIAL | HIGH | HIGH |
+
+**What's Missing:**
+- Best/worst trading days report
+- Best/worst setups report
+- Time-based analysis (hour, day of week)
+- Symbol/instrument performance
+- Win/loss streak analysis
+- Risk metrics report (drawdown, R-multiple)
+- Expectancy calculations
+- Mistakes pattern report
+
+**MVP Requirement:**
+- Add at least 5 new report types beyond basic metrics
+- Each report with date range filter
+- Export capability for each report
+
+---
+
+### **9. Psychology & Mistakes Tracking**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | MEDIUM | LOW |
+
+**What's Missing:**
+- Emotion tags per trade (fear, greed, confident, nervous, etc.)
+- Mistake tags (no stop loss, overtrading, revenge trading, etc.)
+- Setup tags (breakout, pullback, reversal, etc.)
+- Psychology reports showing patterns
+- Mistake frequency analysis
+
+**MVP Requirement:**
+- Add emotion dropdown to trade entry
+- Add mistake dropdown to trade entry
+- Add setup dropdown to trade entry
+- Basic report showing tag frequency
+
+---
+
+### **10. Calendar View**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | MEDIUM | MEDIUM |
+
+**What's Missing:**
+- Monthly calendar showing trading days
+- Color-coded days (green=profit, red=loss)
+- Click day to see all trades
+- Daily P&L summary on each day
+- Navigation between months
+- Today indicator
+
+**MVP Requirement:**
+- Monthly calendar grid
+- Color-coded day cells based on net P&L
+- Click to filter trades by date
+
+---
+
+## **🟡 IMPORTANT MVP FEATURES (Build Second)**
+
+### **11. Trade Replay**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | MEDIUM | HIGH |
+
+**What's Missing:**
+- Tick-by-tick trade replay
+- Chart playback controls (play, pause, speed)
+- Time & sales data during replay
+- Entry/exit point highlighting
+- P&L progression during trade
+
+**MVP Requirement:**
+- Basic chart replay for logged trades
+- Play/pause functionality
+- Speed control (1x, 2x, 5x)
+
+---
+
+### **12. Multi-Account Support**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| PARTIAL | MEDIUM | LOW |
+
+**What's Missing:**
+- Add/remove multiple accounts
+- View accounts individually or combined
+- Account-specific metrics
+- Account switching in all views
+- Account balance/equity display
+
+**MVP Requirement:**
+- Add multiple accounts manually
+- Switch accounts in header
+- View combined or individual metrics
+
+---
+
+### **13. Notebook Feature**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | LOW |
+
+**What's Missing:**
+- Create custom notes/templates
+- Trading plan documentation
+- Loss recap templates
+- Organize by folders/categories
+- Search functionality
+- Pin important notes
+
+**MVP Requirement:**
+- Create/edit/delete notes
+- Basic folder organization
+- Search notes
+
+---
+
+### **14. Challenges System**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | MEDIUM |
+
+**What's Missing:**
+- Create trading challenges (consistency, profitability, discipline)
+- Set target metrics
+- Track progress visually
+- Completion indicators
+- Challenge history
+
+**MVP Requirement:**
+- Create challenge with target and deadline
+- Progress bar showing completion
+- Mark challenge complete
+
+---
+
+### **15. Settings & Configuration**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| PARTIAL | MEDIUM | LOW |
+
+**What's Missing:**
+- Default risk settings (amount, percentage)
+- Breakeven threshold configuration
+- Default commission/fees
+- Currency and timezone settings
+- Dashboard layout preferences
+- Notification preferences
+- Data export/delete account
+
+**MVP Requirement:**
+- Risk default settings
+- Currency and timezone
+- Commission defaults
+
+---
+
+## **🟢 NICE TO HAVE FEATURES (Build Later)**
+
+### **16. Backtesting**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | HIGH |
+
+**What's Missing:**
+- Historical data import
+- Strategy testing interface
+- Backtest results comparison
+- Performance metrics for backtests
+
+---
+
+### **17. Trade Sharing**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | MEDIUM |
+
+**What's Missing:**
+- Generate shareable trade links
+- Share with mentors/communities
+- Public/private trade visibility
+- Share to social media
+
+---
+
+### **18. Learning Resources (Zella University)**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | HIGH |
+
+**What's Missing:**
+- Educational content library
+- Video tutorials
+- Trading courses
+- Webinars
+- Loss recovery guides
+
+---
+
+### **19. Execution History**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | MEDIUM |
+
+**What's Missing:**
+- Multiple entries/exits per trade
+- Partial position tracking
+- Execution-level P&L
+- Scale in/out visualization
+
+---
+
+### **20. Real-Time P&L**
+| Status | Priority | Effort |
+|--------|----------|--------|
+| NOT PRESENT | LOW | HIGH |
+
+**What's Missing:**
+- Live position tracking
+- Real-time equity updates
+- Open trades P&L streaming
+- Price alerts
+
+---
+
+# **PART 2: LAYOUT ERRORS & CORRECTIONS**
+
+## **📐 LAYOUT ISSUE 1: Inconsistent Card Heights**
+
+**Problem:** Metric cards may have varying heights causing visual misalignment.
+
+**Correction:**
+- Set minimum height for all metric cards (same value)
+- Use flexbox with stretch alignment
+- Ensure content vertically centers within cards
+- Add consistent padding across all cards
+
+---
+
+## **📐 LAYOUT ISSUE 2: Table Column Widths**
+
+**Problem:** Table columns may not have appropriate widths causing text truncation or excessive whitespace.
+
+**Correction:**
+- Define explicit width or min-width for each column
+- Priority columns (Symbol, P&L, Status) should be wider
+- Less important columns can be narrower
+- Enable horizontal scroll for overflow on small screens
+- Add text truncation with tooltip for long values
+
+---
+
+## **📐 LAYOUT ISSUE 3: Responsive Breakpoints**
+
+**Problem:** Layout may not adapt properly to different screen sizes.
+
+**Correction:**
+- Define 3 breakpoints: Mobile (0-640px), Tablet (641-1024px), Desktop (1025px+)
+- Mobile: Stack metric cards vertically, hide less important table columns
+- Tablet: 2x2 grid for metric cards, show essential table columns only
+- Desktop: Full layout with all features visible
+- Test on actual devices, not just browser resize
+
+---
+
+## **📐 LAYOUT ISSUE 4: Navigation Sidebar**
+
+**Problem:** Sidebar may be missing, inconsistent, or not properly styled.
+
+**Correction:**
+- Fixed sidebar on left (desktop) or hamburger menu (mobile)
+- Consistent icon sizes (20x20px)
+- Clear active state indication
+- Proper spacing between menu items
+- Logo/brand at top, user profile at bottom
+- Collapse functionality for more content space
+
+---
+
+## **📐 LAYOUT ISSUE 5: Header Alignment**
+
+**Problem:** Header controls (Filters, Date Range, Account) may not align properly.
+
+**Correction:**
+- Use flexbox with space-between for title and controls
+- Align all dropdown buttons to same height
+- Consistent spacing between dropdown controls (8-12px gap)
+- Icons should be vertically centered in buttons
+- Dropdown menus should align with button edges
+
+---
+
+## **📐 LAYOUT ISSUE 6: Pagination Bar**
+
+**Problem:** Pagination may be misaligned or missing elements.
+
+**Correction:**
+- Full-width container with border-top separator
+- Left section: Trades per page dropdown + count text
+- Right section: Page navigation buttons
+- Vertically center all elements
+- Disabled state for prev/next at boundaries
+- Show current page clearly highlighted
+
+---
+
+## **📐 LAYOUT ISSUE 7: Color Consistency**
+
+**Problem:** Colors may not be consistent across the application.
+
+**Correction:**
+- Define CSS variables for all colors in one location
+- Use variables everywhere instead of hardcoded values
+- Primary color: One brand color for interactive elements
+- Success color: One green for all positive values
+- Danger color: One red for all negative values
+- Text colors: Primary, secondary, muted (3 levels)
+- Background colors: Main, secondary, card (3 levels)
+
+---
+
+## **📐 LAYOUT ISSUE 8: Typography Hierarchy**
+
+**Problem:** Font sizes and weights may be inconsistent.
+
+**Correction:**
+- Define type scale: xs, sm, base, lg, xl, 2xl, 3xl
+- Page titles: 2xl, semibold
+- Section headers: xl, semibold
+- Card labels: sm, medium
+- Card values: 2xl, bold
+- Table headers: xs, medium, uppercase
+- Table content: sm, normal
+- Use consistently throughout
+
+---
+
+## **📐 LAYOUT ISSUE 9: Spacing System**
+
+**Problem:** Margins and padding may be inconsistent.
+
+**Correction:**
+- Use 8-point grid system (8, 16, 24, 32, 48, 64px)
+- Page padding: 24px or 32px
+- Card padding: 24px
+- Gap between cards: 16px or 24px
+- Table cell padding: 12px vertical, 16px horizontal
+- Section margins: 32px between major sections
+
+---
+
+## **📐 LAYOUT ISSUE 10: Loading States**
+
+**Problem:** Loading states may be missing or inconsistent.
+
+**Correction:**
+- Skeleton loaders for cards while data fetches
+- Spinner for table during data load
+- Disabled state for buttons during actions
+- Loading text for async operations
+- Consistent loading animation style
+- Maximum load time indication (if taking long)
+
+---
+
+## **📐 LAYOUT ISSUE 11: Empty States**
+
+**Problem:** Empty states may not be designed for no data scenarios.
+
+**Correction:**
+- Design empty state for trade log (no trades yet)
+- Design empty state for reports (no data in range)
+- Design empty state for journal (no entries)
+- Include illustration or icon
+- Include helpful text explaining next steps
+- Include call-to-action button (e.g., "Add First Trade")
+
+---
+
+## **📐 LAYOUT ISSUE 12: Error States**
+
+**Problem:** Error states may not be properly displayed.
+
+**Correction:**
+- Error banner for failed data loads
+- Inline error messages for form validation
+- Toast notifications for action errors
+- Retry button for failed operations
+- Clear error messages (not technical jargon)
+- Consistent error styling (red theme)
+
+---
+
+## **📐 LAYOUT ISSUE 13: Hover & Focus States**
+
+**Problem:** Interactive elements may lack proper hover/focus indicators.
+
+**Correction:**
+- All buttons must have hover state (color change or shadow)
+- All links must have hover state (underline or color change)
+- All form inputs must have focus state (border highlight)
+- Table rows must have hover state (background change)
+- Focus rings must be visible for keyboard navigation
+- Consistent transition timing (150-200ms)
+
+---
+
+## **📐 LAYOUT ISSUE 14: Chart Sizing**
+
+**Problem:** Charts may not resize properly or have inconsistent sizing.
+
+**Correction:**
+- Charts should fill container width
+- Set aspect ratio or fixed height for consistency
+- Charts in cards should have consistent height
+- Responsive chart data points (fewer on mobile)
+- Tooltips must be readable on all screen sizes
+- Legend should not overflow container
+
+---
+
+## **📐 LAYOUT ISSUE 15: Modal/Dialog Alignment**
+
+**Problem:** Modals may not be centered or properly sized.
+
+**Correction:**
+- Center modal horizontally and vertically
+- Max width for large screens (600-800px)
+- Full width on mobile with margin
+- Overlay background with proper opacity
+- Close button clearly visible in corner
+- Escape key closes modal
+- Click outside closes modal (optional)
+
+---
+
+# **PART 3: FUNCTIONAL ERRORS TO FIX**
+
+## **⚠️ FUNCTIONAL ISSUE 1: Goal Sections Not Working**
+
+**Problem:** Goal-related features are broken or non-functional.
+
+**Fix Required:**
+- Option A: Fully implement goal creation, tracking, and completion
+- Option B: Remove all goal-related UI elements completely
+- Do NOT leave broken features in production
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 2: Metric Calculations**
+
+**Problem:** Metrics may not calculate from actual trade data.
+
+**Fix Required:**
+- Net P&L must sum all trade P&L values
+- Win Rate must calculate from actual win/loss count
+- Profit Factor must be gross profit / gross loss
+- All metrics must update when filters change
+- All metrics must update when date range changes
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 3: Sorting Not Working**
+
+**Problem:** Table column sorting may not function correctly.
+
+**Fix Required:**
+- Click header toggles asc/desc/none
+- Visual indicator shows current sort direction
+- Sort persists during session
+- Multiple column sort optional (shift+click)
+- Sort works with filtered data
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 4: Filter Not Applying**
+
+**Problem:** Filters may not apply to table or metrics.
+
+**Fix Required:**
+- Filters must filter table rows
+- Filters must recalculate all metrics
+- Active filter count displayed
+- Clear filters button resets all
+- Filter state persists in URL or session
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 5: Pagination Broken**
+
+**Problem:** Pagination may not navigate correctly.
+
+**Fix Required:**
+- Next/Prev buttons change page
+- Page numbers clickable
+- Trades per page changes page size
+- Page resets to 1 when filters change
+- Total count accurate
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 6: Row Selection Not Working**
+
+**Problem:** Checkboxes may not select rows properly.
+
+**Fix Required:**
+- Click checkbox selects/deselects row
+- Select all selects all visible rows
+- Bulk actions enabled when rows selected
+- Selection count displayed
+- Selection clears on page change or filter
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 7: Account Switching**
+
+**Problem:** Account dropdown may not switch data.
+
+**Fix Required:**
+- Selecting account reloads trade data
+- All metrics recalculate for selected account
+- Account name displays in dropdown
+- Multiple accounts can be added
+- Default account on first load
+
+---
+
+## **⚠️ FUNCTIONAL ISSUE 8: Date Range Not Filtering**
+
+**Problem:** Date range may not filter data.
+
+**Fix Required:**
+- Selecting date range filters trades
+- Metrics update for date range
+- Preset ranges work (7 days, 30 days, etc.)
+- Custom range picker functional
+- Invalid ranges prevented (end before start)
+
+---
+
+# **PART 4: MVP PRIORITY MATRIX**
+
+| Feature | Priority | Effort | Impact | Build Order |
+|---------|----------|--------|--------|-------------|
+| Broker Integration | CRITICAL | HIGH | HIGH | 1 |
+| Trade Import/Export | CRITICAL | MEDIUM | HIGH | 2 |
+| Detailed Trade View | CRITICAL | MEDIUM | HIGH | 3 |
+| Advanced Filtering | CRITICAL | MEDIUM | HIGH | 4 |
+| Zella Score | HIGH | MEDIUM | HIGH | 5 |
+| Extended Reports | HIGH | HIGH | HIGH | 6 |
+| Trading Playbook | HIGH | MEDIUM | MEDIUM | 7 |
+| Daily Journal | HIGH | LOW | MEDIUM | 8 |
+| Psychology Tracking | MEDIUM | LOW | MEDIUM | 9 |
+| Calendar View | MEDIUM | MEDIUM | MEDIUM | 10 |
+| Trade Replay | MEDIUM | HIGH | MEDIUM | 11 |
+| Multi-Account | MEDIUM | LOW | LOW | 12 |
+| Settings | MEDIUM | LOW | LOW | 13 |
+| Notebook | LOW | LOW | LOW | 14 |
+| Challenges | LOW | MEDIUM | LOW | 15 |
+
+---
+
+# **PART 5: IMMEDIATE ACTION ITEMS**
+
+## **This Week (Critical Fixes)**
+1. Fix all layout inconsistencies (cards, tables, spacing)
+2. Fix goal sections (implement or remove)
+3. Fix metric calculations to use real data
+4. Fix sorting, filtering, pagination functionality
+5. Fix row selection and bulk actions
+
+## **Next Week (Core Features)**
+6. Add CSV import functionality
+7. Add detailed trade view page
+8. Add advanced filter panel
+9. Add Zella Score calculation
+10. Add 5 new report types
+
+## **Following Week (Enhancements)**
+11. Add trading playbook feature
+12. Add daily journal feature
+13. Add psychology/mistake tags
+14. Add calendar view
+15. Fix all responsive layout issues
+
+---

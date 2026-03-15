@@ -6,6 +6,8 @@ import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Journal from "@/pages/Journal";
+import DailyJournal from "@/pages/DailyJournal";
+import Integrations from "@/pages/Integrations";
 import Analytics from "@/pages/Analytics";
 import CalendarView from "@/pages/CalendarView";
 import Goals from "@/pages/Goals";
@@ -31,6 +33,7 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/daily-journal" component={DailyJournal} />
         <Route path="/journal" component={Journal} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/reports" component={Reports} />
@@ -40,6 +43,7 @@ function Router() {
         <Route path="/goals" component={Goals} />
         <Route path="/playbooks" component={Playbooks} />
         <Route path="/weekly-review" component={WeeklyReview} />
+        <Route path="/integrations" component={Integrations} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

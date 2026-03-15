@@ -25,6 +25,8 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
+  Link2,
+  PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -43,8 +45,8 @@ const NAV_SECTIONS = [
     label: "Main",
     items: [
       { path: "/", label: "Dashboard", icon: LayoutDashboard },
-      { path: "/journal", label: "Daily Journal", icon: BookOpen },
-      { path: "/journal", label: "Trade Log", icon: LineChart, exact: false },
+      { path: "/daily-journal", label: "Daily Journal", icon: PenLine },
+      { path: "/journal", label: "Trade Log", icon: LineChart },
       { path: "/reports", label: "Reports", icon: BarChart2 },
       { path: "/analytics", label: "Insights", icon: Lightbulb },
     ],
@@ -57,6 +59,7 @@ const NAV_SECTIONS = [
       { path: "/challenges", label: "Challenges", icon: Trophy },
       { path: "/calendar", label: "Calendar", icon: CalendarIcon },
       { path: "/weekly-review", label: "Weekly Review", icon: CalendarDays },
+      { path: "/integrations", label: "Integrations", icon: Link2 },
     ],
   },
   {
