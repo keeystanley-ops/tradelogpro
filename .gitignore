@@ -47,3 +47,17 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Secrets & Databases
+.env
+*.env
+*.db
+*.db-journal
+*.sqlite
+node_modules/
+dist/
+build/
+.next/
+.venv/
+frontend.log
+*.log

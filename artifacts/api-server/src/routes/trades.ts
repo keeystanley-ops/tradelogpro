@@ -1,75 +1,94 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { tradesTable } from "@workspace/db";
-import { eq, and, gte, lte, desc, sql, count } from "drizzle-orm";
+import { eq, and, gte, lte, desc, count } from "drizzle-orm";
+import type { AuthenticatedRequest } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-function calcPnl(
-  direction: string,
-  quantity: number,
-  entryPrice: number,
-  exitPrice: number
-): number {
-  if (direction === "LONG") {
-    return (exitPrice - entryPrice) * quantity;
-  } else {
-    return (entryPrice - exitPrice) * quantity;
-  }
+/**
+ * HELPERS
+ */
+function parseN(v: any): number {
+  return parseFloat(v) || 0;
 }
 
-function calcRMultiple(
-  direction: string,
-  entryPrice: number,
-  exitPrice: number,
-  stopLoss: number | null
-): number | null {
+function calcPnl(direction: string, qty: number, entry: number, exit: number) {
+  return direction === "LONG"
+    ? (exit - entry) * qty
+    : (entry - exit) * qty;
+}
+
+function calcRMultiple(direction: string, entry: number, exit: number, stopLoss: number | null) {
   if (!stopLoss) return null;
-  const risk = Math.abs(entryPrice - stopLoss);
+  const risk = Math.abs(entry - stopLoss);
   if (risk === 0) return null;
-  if (direction === "LONG") {
-    return (exitPrice - entryPrice) / risk;
-  } else {
-    return (entryPrice - exitPrice) / risk;
-  }
+
+  return direction === "LONG"
+    ? (exit - entry) / risk
+    : (entry - exit) / risk;
 }
 
+/**
+ * RESPONSE MAPPER
+ */
 function mapTrade(t: any) {
   return {
     id: t.id,
+    playbookId: t.playbookId,
+
     symbol: t.symbol,
     assetClass: t.assetClass,
     direction: t.direction,
-    quantity: parseFloat(t.quantity),
-    entryPrice: parseFloat(t.entryPrice),
-    exitPrice: parseFloat(t.exitPrice),
-    entryTime: t.entryTime instanceof Date ? t.entryTime.toISOString() : t.entryTime,
-    exitTime: t.exitTime instanceof Date ? t.exitTime.toISOString() : t.exitTime,
+
+    quantity: parseN(t.quantity),
+    entryPrice: parseN(t.entryPrice),
+    exitPrice: parseN(t.exitPrice),
+
+    entryTime: t.entryTime?.toISOString?.() || t.entryTime,
+    exitTime: t.exitTime?.toISOString?.() || t.exitTime,
+
     durationSeconds: t.durationSeconds,
-    grossPnl: parseFloat(t.grossPnl),
-    netPnl: parseFloat(t.netPnl),
-    commissions: parseFloat(t.commissions),
-    fees: parseFloat(t.fees),
-    slippage: parseFloat(t.slippage),
+
+    grossPnl: parseN(t.grossPnl),
+    netPnl: parseN(t.netPnl),
+
+    commissions: parseN(t.commissions),
+    fees: parseN(t.fees),
+    slippage: parseN(t.slippage),
+
+    stopLoss: t.stopLoss ? parseN(t.stopLoss) : null,
+    rMultiple: t.rMultiple ? parseN(t.rMultiple) : null,
+
     status: t.status,
     importSource: t.importSource,
-    setupTag: t.setupTag,
-    mistakeTag: t.mistakeTag,
-    emotionTag: t.emotionTag,
+
+    // 🔥 NEW BEHAVIOR FIELDS
+    followedRules: t.followedRules,
+    mistakes: t.mistakes || [],
+    emotions: t.emotions || [],
+    grade: t.grade,
+
     notes: t.notes,
     rating: t.rating,
-    rMultiple: t.rMultiple ? parseFloat(t.rMultiple) : null,
-    createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
+
+    createdAt: t.createdAt?.toISOString?.() || t.createdAt,
   };
 }
 
-router.get("/", async (req, res) => {
+/**
+ * GET TRADES
+ */
+router.get("/", async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = (page - 1) * limit;
 
-    const conditions = [];
+    const conditions = [eq(tradesTable.userId, userId)];
 
     if (req.query.startDate) {
       conditions.push(gte(tradesTable.entryTime, new Date(req.query.startDate as string)));
@@ -86,14 +105,14 @@ router.get("/", async (req, res) => {
     if (req.query.status) {
       conditions.push(eq(tradesTable.status, req.query.status as any));
     }
-    if (req.query.setupTag) {
-      conditions.push(eq(tradesTable.setupTag, req.query.setupTag as string));
+    if (req.query.playbookId) {
+      conditions.push(eq(tradesTable.playbookId, parseInt(req.query.playbookId as string)));
     }
     if (req.query.symbol) {
       conditions.push(eq(tradesTable.symbol, (req.query.symbol as string).toUpperCase()));
     }
 
-    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const where = and(...conditions);
 
     const [trades, totalResult] = await Promise.all([
       db.select().from(tradesTable).where(where).orderBy(desc(tradesTable.entryTime)).limit(limit).offset(offset),
@@ -106,158 +125,139 @@ router.get("/", async (req, res) => {
       page,
       limit,
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch trades" });
   }
 });
 
-router.post("/", async (req, res) => {
+/**
+ * CREATE TRADE
+ */
+router.post("/", async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     const body = req.body;
-    const entry = parseFloat(body.entryPrice);
-    const exit = parseFloat(body.exitPrice);
-    const qty = parseFloat(body.quantity);
-    const commissions = parseFloat(body.commissions) || 0;
-    const fees = parseFloat(body.fees) || 0;
-    const slippage = parseFloat(body.slippage) || 0;
+
+    const entry = parseN(body.entryPrice);
+    const exit = parseN(body.exitPrice);
+    const qty = parseN(body.quantity);
+
+    const commissions = parseN(body.commissions);
+    const fees = parseN(body.fees);
+    const slippage = parseN(body.slippage);
 
     const grossPnl = calcPnl(body.direction, qty, entry, exit);
     const netPnl = grossPnl - commissions - fees - slippage;
 
     const entryTime = new Date(body.entryTime);
     const exitTime = new Date(body.exitTime);
+
     const durationSeconds = Math.floor((exitTime.getTime() - entryTime.getTime()) / 1000);
 
-    const stopLoss = body.stopLoss ? parseFloat(body.stopLoss) : null;
+    const stopLoss = body.stopLoss ? parseN(body.stopLoss) : null;
     const rMultiple = calcRMultiple(body.direction, entry, exit, stopLoss);
 
     const [trade] = await db.insert(tradesTable).values({
+      userId,
+
+      // 🔥 RELATION FIX
+      playbookId: body.playbookId || null,
+
       symbol: body.symbol.toUpperCase(),
       assetClass: body.assetClass,
       direction: body.direction,
+
       quantity: qty.toString(),
       entryPrice: entry.toString(),
       exitPrice: exit.toString(),
+
       entryTime,
       exitTime,
       durationSeconds,
+
       grossPnl: grossPnl.toFixed(4),
       netPnl: netPnl.toFixed(4),
+
       commissions: commissions.toFixed(4),
       fees: fees.toFixed(4),
       slippage: slippage.toFixed(4),
+
       stopLoss: stopLoss ? stopLoss.toString() : null,
+      rMultiple: rMultiple ? rMultiple.toFixed(4) : null,
+
       status: "CLOSED",
       importSource: "MANUAL",
-      setupTag: body.setupTag || null,
-      mistakeTag: body.mistakeTag || null,
-      emotionTag: body.emotionTag || null,
+
+      // 🔥 NEW FIELDS
+      followedRules: body.followedRules ?? false,
+      mistakes: body.mistakes || [],
+      emotions: body.emotions || [],
+      grade: body.grade || null,
+
       notes: body.notes || null,
       rating: body.rating || null,
-      rMultiple: rMultiple ? rMultiple.toFixed(4) : null,
     }).returning();
 
     res.status(201).json(mapTrade(trade));
+
   } catch (err) {
-    console.error(err);
+    console.error("TRADE CREATION ERROR:", err);
     res.status(500).json({ error: "Failed to create trade" });
   }
 });
 
-router.post("/import", async (req, res) => {
+/**
+ * UPDATE TRADE
+ */
+router.patch("/:id", async (req: AuthenticatedRequest, res) => {
   try {
-    const { trades: rows } = req.body;
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(400).json({ error: "No trades provided" });
-    }
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    let imported = 0;
-    let failed = 0;
-
-    for (const row of rows) {
-      try {
-        const sym = String(row.symbol || "").toUpperCase();
-        if (!sym) { failed++; continue; }
-
-        const dir = String(row.direction || "LONG").toUpperCase() === "SHORT" ? "SHORT" : "LONG";
-        const qty = Math.abs(parseFloat(row.quantity) || 1);
-        const entry = parseFloat(row.entryPrice) || 0;
-        const exit = parseFloat(row.exitPrice) || 0;
-
-        const entryTime = row.entryDate ? new Date(row.entryDate) : new Date();
-        const exitTime = row.exitDate ? new Date(row.exitDate) : entryTime;
-        if (isNaN(entryTime.getTime())) { failed++; continue; }
-
-        const grossPnl = calcPnl(dir, qty, entry, exit);
-        const comm = Math.abs(parseFloat(row.commission) || 0);
-        const netPnl = parseFloat(row.netPnl as any) || grossPnl - comm;
-        const durationSeconds = Math.max(0, Math.floor((exitTime.getTime() - entryTime.getTime()) / 1000));
-
-        await db.insert(tradesTable).values({
-          symbol: sym,
-          assetClass: "STOCK",
-          direction: dir as "LONG" | "SHORT",
-          quantity: qty.toString(),
-          entryPrice: entry.toString(),
-          exitPrice: exit.toString(),
-          entryTime,
-          exitTime,
-          durationSeconds,
-          grossPnl: grossPnl.toFixed(4),
-          netPnl: netPnl.toFixed(4),
-          commissions: comm.toFixed(4),
-          fees: "0",
-          slippage: "0",
-          status: "CLOSED",
-          importSource: "CSV",
-        });
-        imported++;
-      } catch {
-        failed++;
-      }
-    }
-
-    res.json({ imported, failed, total: rows.length });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Import failed" });
-  }
-});
-
-router.get("/:id", async (req, res) => {
-  try {
-    const [trade] = await db.select().from(tradesTable).where(eq(tradesTable.id, parseInt(req.params.id)));
-    if (!trade) return res.status(404).json({ error: "Trade not found" });
-    res.json(mapTrade(trade));
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch trade" });
-  }
-});
-
-router.patch("/:id", async (req, res) => {
-  try {
     const body = req.body;
     const updates: any = {};
 
-    if (body.setupTag !== undefined) updates.setupTag = body.setupTag;
-    if (body.mistakeTag !== undefined) updates.mistakeTag = body.mistakeTag;
-    if (body.emotionTag !== undefined) updates.emotionTag = body.emotionTag;
+    if (body.playbookId !== undefined) updates.playbookId = body.playbookId;
+
+    if (body.followedRules !== undefined) updates.followedRules = body.followedRules;
+    if (body.mistakes !== undefined) updates.mistakes = body.mistakes;
+    if (body.emotions !== undefined) updates.emotions = body.emotions;
+    if (body.grade !== undefined) updates.grade = body.grade;
+
     if (body.notes !== undefined) updates.notes = body.notes;
     if (body.rating !== undefined) updates.rating = body.rating;
 
-    const [trade] = await db.update(tradesTable).set(updates).where(eq(tradesTable.id, parseInt(req.params.id))).returning();
+    const [trade] = await db.update(tradesTable).set(updates).where(
+      and(eq(tradesTable.id, parseInt(req.params.id)), eq(tradesTable.userId, userId))
+    ).returning();
+
     if (!trade) return res.status(404).json({ error: "Trade not found" });
+
     res.json(mapTrade(trade));
+
   } catch (err) {
     res.status(500).json({ error: "Failed to update trade" });
   }
 });
 
-router.delete("/:id", async (req, res) => {
+/**
+ * DELETE TRADE
+ */
+router.delete("/:id", async (req: AuthenticatedRequest, res) => {
   try {
-    await db.delete(tradesTable).where(eq(tradesTable.id, parseInt(req.params.id)));
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    await db.delete(tradesTable).where(
+      and(eq(tradesTable.id, parseInt(req.params.id)), eq(tradesTable.userId, userId))
+    );
+
     res.status(204).send();
+
   } catch (err) {
     res.status(500).json({ error: "Failed to delete trade" });
   }

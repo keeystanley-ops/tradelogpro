@@ -9,18 +9,25 @@ import playbooksRouter from "./playbooks";
 import aiRouter from "./ai";
 import notebookRouter from "./notebook";
 import challengesRouter from "./challenges";
+import settingsRouter from "./settings";
+import authRouter from "./auth";
+import { authenticate } from "../middleware/auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use("/trades", tradesRouter);
-router.use("/analytics", analyticsRouter);
-router.use("/analytics", insightsRouter);
-router.use("/analytics", weeklyReviewRouter);
-router.use("/goals", goalsRouter);
-router.use("/playbooks", playbooksRouter);
-router.use("/ai", aiRouter);
-router.use("/notebook", notebookRouter);
-router.use("/challenges", challengesRouter);
+router.use("/auth", authRouter);
+
+// Protected routes
+router.use("/trades", authenticate, tradesRouter);
+router.use("/analytics", authenticate, analyticsRouter);
+router.use("/analytics", authenticate, insightsRouter);
+router.use("/analytics", authenticate, weeklyReviewRouter);
+router.use("/goals", authenticate, goalsRouter);
+router.use("/playbooks", authenticate, playbooksRouter);
+router.use("/ai", authenticate, aiRouter);
+router.use("/notebook", authenticate, notebookRouter);
+router.use("/challenges", authenticate, challengesRouter);
+router.use("/settings", authenticate, settingsRouter);
 
 export default router;

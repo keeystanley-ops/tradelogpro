@@ -3,10 +3,21 @@ import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-function getClient() {
+function getGitHubModelsClient() {
+  const apiKey = process.env.GITHUB_MODELS_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({
+    baseURL: "https://models.inference.ai.azure.com",
+    apiKey: apiKey,
+  });
+}
+
+function getOpenAIClient() {
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
   return new OpenAI({
     baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder",
+    apiKey: apiKey,
   });
 }
 
@@ -18,33 +29,66 @@ router.post("/summarize-note", async (req, res) => {
     }
 
     const contextStr = tradeContext ? `\nTrade context: ${tradeContext}` : "";
-    const prompt = `You are a trading coach reviewing a trader's journal notes. Summarize the following trade note in 1-2 concise sentences focusing on the key lesson learned and what the trader should do differently next time.${contextStr}
+    const prompt = `You are a professional trading coach. Summarize the following journal notes in 1-2 concise sentences focusing on the key lesson and actionable takeaways.${contextStr}
+    
+    Journal Note: "${notes}"
+    
+    Respond in JSON format: { "summary": "...", "keyLesson": "..." }`;
 
-Journal note: "${notes}"
+    const client = getGitHubModelsClient() || getOpenAIClient();
+    if (!client) {
+      return res.status(503).json({ error: "AI services unavailable (No API keys provided)" });
+    }
 
-Respond with JSON: { "summary": "<1-2 sentence summary>", "keyLesson": "<1 actionable takeaway>" }`;
-
-    const client = getClient();
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      max_tokens: 200,
     });
 
     const content = completion.choices[0].message.content;
-    if (!content) {
-      return res.status(500).json({ error: "AI returned empty response" });
+    if (content) {
+      const parsed = JSON.parse(content);
+      return res.json({
+        summary: parsed.summary,
+        keyLesson: parsed.keyLesson,
+      });
     }
 
-    const parsed = JSON.parse(content);
-    res.json({
-      summary: parsed.summary || "No summary available.",
-      keyLesson: parsed.keyLesson || "Review your notes for key lessons.",
-    });
+    res.status(500).json({ error: "Failed to generate AI response" });
   } catch (err) {
     console.error("AI summarize error:", err);
     res.status(500).json({ error: "Failed to generate AI summary" });
+  }
+});
+
+router.post("/chat", async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    console.log("[AI] Chat request received. Using GitHub Models.");
+    
+    if (!message) return res.status(400).json({ error: "Message is required" });
+
+    const systemPrompt = "You are TradeInsight AI, a professional trading mental coach and analyst. You help traders stay disciplined, analyze their performance data, and manage risk. Be concise, supportive, and data-driven.";
+    
+    const client = getGitHubModelsClient() || getOpenAIClient();
+    if (!client) {
+      return res.status(503).json({ error: "AI services unavailable" });
+    }
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...(history || []).map((h: any) => ({ role: h.role, content: h.content })),
+        { role: "user", content: message }
+      ],
+    });
+
+    return res.json({ content: completion.choices[0].message.content });
+  } catch (err) {
+    console.error("AI chat error:", err);
+    res.status(500).json({ error: "Failed to generate AI response" });
   }
 });
 

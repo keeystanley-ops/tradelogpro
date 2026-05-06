@@ -4,7 +4,9 @@ import {
   text,
   numeric,
   integer,
+  boolean,
   timestamp,
+  jsonb,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -34,6 +36,11 @@ export const importSourceEnum = pgEnum("import_source", [
 
 export const tradesTable = pgTable("trades", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+
+  // Playbook relation
+  playbookId: integer("playbook_id"),
+
   symbol: text("symbol").notNull(),
   assetClass: assetClassEnum("asset_class").notNull().default("STOCK"),
   direction: directionEnum("direction").notNull(),
@@ -49,14 +56,18 @@ export const tradesTable = pgTable("trades", {
   fees: numeric("fees", { precision: 18, scale: 4 }).notNull().default("0"),
   slippage: numeric("slippage", { precision: 18, scale: 4 }).notNull().default("0"),
   stopLoss: numeric("stop_loss", { precision: 18, scale: 8 }),
+  rMultiple: numeric("r_multiple", { precision: 10, scale: 4 }),
   status: tradeStatusEnum("status").notNull().default("CLOSED"),
   importSource: importSourceEnum("import_source").notNull().default("MANUAL"),
-  setupTag: text("setup_tag"),
-  mistakeTag: text("mistake_tag"),
-  emotionTag: text("emotion_tag"),
+
+  // Behavior tracking fields
+  followedRules: boolean("followed_rules").notNull().default(false),
+  mistakes: jsonb("mistakes").notNull().default([]),
+  emotions: jsonb("emotions").notNull().default([]),
+  grade: text("grade"),
+
   notes: text("notes"),
   rating: integer("rating"),
-  rMultiple: numeric("r_multiple", { precision: 10, scale: 4 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

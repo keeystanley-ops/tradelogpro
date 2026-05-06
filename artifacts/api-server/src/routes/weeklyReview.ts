@@ -18,7 +18,8 @@ function mapTrade(t: any) {
     durationSeconds: t.durationSeconds, grossPnl: parseN(t.grossPnl), netPnl: parseN(t.netPnl),
     commissions: parseN(t.commissions), fees: parseN(t.fees), slippage: parseN(t.slippage),
     status: t.status, importSource: t.importSource,
-    setupTag: t.setupTag, mistakeTag: t.mistakeTag, emotionTag: t.emotionTag,
+    playbookId: t.playbookId,
+    followedRules: t.followedRules, mistakes: t.mistakes || [], emotions: t.emotions || [], grade: t.grade,
     notes: t.notes, rating: t.rating,
     rMultiple: t.rMultiple ? parseN(t.rMultiple) : null,
     createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
@@ -64,17 +65,20 @@ router.get("/weekly-review", async (req, res) => {
     const bestTrade = trades.reduce((a, b) => parseN(a.netPnl) > parseN(b.netPnl) ? a : b);
     const worstTrade = trades.reduce((a, b) => parseN(a.netPnl) < parseN(b.netPnl) ? a : b);
 
-    // Top setup
-    const setupCounts = new Map<string, number>();
+    // Top playbook
+    const playbookCounts = new Map<number, number>();
     for (const t of trades) {
-      if (t.setupTag) setupCounts.set(t.setupTag, (setupCounts.get(t.setupTag) || 0) + 1);
+      if (t.playbookId) playbookCounts.set(t.playbookId, (playbookCounts.get(t.playbookId) || 0) + 1);
     }
-    const topSetup = setupCounts.size > 0 ? [...setupCounts.entries()].sort((a, b) => b[1] - a[1])[0][0] : null;
+    const topSetup = playbookCounts.size > 0 ? [...playbookCounts.entries()].sort((a, b) => b[1] - a[1])[0][0] : null;
 
-    // Top mistake
+    // Top mistake (from mistakes array)
     const mistakeCounts = new Map<string, number>();
     for (const t of trades) {
-      if (t.mistakeTag) mistakeCounts.set(t.mistakeTag, (mistakeCounts.get(t.mistakeTag) || 0) + 1);
+      const mistakes = (t as any).mistakes || [];
+      for (const m of mistakes) {
+        mistakeCounts.set(m, (mistakeCounts.get(m) || 0) + 1);
+      }
     }
     const topMistake = mistakeCounts.size > 0 ? [...mistakeCounts.entries()].sort((a, b) => b[1] - a[1])[0][0] : null;
 

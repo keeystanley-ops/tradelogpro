@@ -118,7 +118,7 @@ router.get("/dashboard", async (req, res) => {
       totalCommissions, sharpeRatio
     });
   } catch (err) {
-    console.error(err);
+    console.error("[Analytics] Error in /dashboard:", err);
     res.status(500).json({ error: "Failed to fetch dashboard analytics" });
   }
 });
@@ -153,7 +153,7 @@ router.get("/equity-curve", async (req, res) => {
 
     res.json({ points, startingBalance: 0 });
   } catch (err) {
-    console.error(err);
+    console.error("[Analytics] Error in /equity-curve:", err);
     res.status(500).json({ error: "Failed to fetch equity curve" });
   }
 });
@@ -270,13 +270,14 @@ router.get("/behavioral", async (req, res) => {
   try {
     const trades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED"));
 
-    // Mistake distribution
+    // Mistake distribution (from mistakes array)
     const mistakeMap = new Map<string, { count: number; totalLoss: number }>();
     for (const t of trades) {
-      if (t.mistakeTag) {
+      const mistakes = (t as any).mistakes || [];
+      for (const tag of mistakes) {
         const pnl = parseFloat(t.netPnl);
-        const existing = mistakeMap.get(t.mistakeTag) || { count: 0, totalLoss: 0 };
-        mistakeMap.set(t.mistakeTag, {
+        const existing = mistakeMap.get(tag) || { count: 0, totalLoss: 0 };
+        mistakeMap.set(tag, {
           count: existing.count + 1,
           totalLoss: existing.totalLoss + (pnl < 0 ? Math.abs(pnl) : 0),
         });
@@ -290,13 +291,14 @@ router.get("/behavioral", async (req, res) => {
       percentage: totalMistakeTrades > 0 ? (v.count / totalMistakeTrades) * 100 : 0,
     })).sort((a, b) => b.count - a.count);
 
-    // Emotion performance
+    // Emotion performance (from emotions array)
     const emotionMap = new Map<string, { pnl: number; count: number; wins: number }>();
     for (const t of trades) {
-      if (t.emotionTag) {
+      const emotions = (t as any).emotions || [];
+      for (const emotion of emotions) {
         const pnl = parseFloat(t.netPnl);
-        const existing = emotionMap.get(t.emotionTag) || { pnl: 0, count: 0, wins: 0 };
-        emotionMap.set(t.emotionTag, {
+        const existing = emotionMap.get(emotion) || { pnl: 0, count: 0, wins: 0 };
+        emotionMap.set(emotion, {
           pnl: existing.pnl + pnl,
           count: existing.count + 1,
           wins: existing.wins + (pnl > 0 ? 1 : 0),
@@ -310,14 +312,14 @@ router.get("/behavioral", async (req, res) => {
       winRate: v.count > 0 ? (v.wins / v.count) * 100 : 0,
     }));
 
-    // Setup performance
-    const setupMap = new Map<string, { pnl: number; count: number; wins: number; rSum: number; rCount: number }>();
+    // Setup performance (by playbookId)
+    const setupMap = new Map<number, { pnl: number; count: number; wins: number; rSum: number; rCount: number }>();
     for (const t of trades) {
-      if (t.setupTag) {
+      if (t.playbookId) {
         const pnl = parseFloat(t.netPnl);
-        const existing = setupMap.get(t.setupTag) || { pnl: 0, count: 0, wins: 0, rSum: 0, rCount: 0 };
+        const existing = setupMap.get(t.playbookId) || { pnl: 0, count: 0, wins: 0, rSum: 0, rCount: 0 };
         const rMult = t.rMultiple ? parseFloat(t.rMultiple) : null;
-        setupMap.set(t.setupTag, {
+        setupMap.set(t.playbookId, {
           pnl: existing.pnl + pnl,
           count: existing.count + 1,
           wins: existing.wins + (pnl > 0 ? 1 : 0),
@@ -459,8 +461,8 @@ router.get("/zella-score", async (req, res) => {
     const notesPct = tradesWithNotes / closed.length;
     const journalScore = Math.min(5, notesPct * 5);
 
-    // Plan adherence: % trades with setup tag
-    const tradesWithSetup = closed.filter(t => t.setupTag).length;
+    // Plan adherence: % trades with playbookId
+    const tradesWithSetup = closed.filter(t => t.playbookId).length;
     const setupPct = tradesWithSetup / closed.length;
     const planScore = Math.min(6, setupPct * 6);
 
@@ -544,7 +546,7 @@ router.get("/reports/by-setup", async (req, res) => {
     const trades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED"));
     const map = new Map<string, { pnl: number; count: number; wins: number }>();
     for (const t of trades) {
-      const key = t.setupTag || "No Setup";
+      const key = t.playbookId ? `Playbook #${t.playbookId}` : "No Playbook";
       const existing = map.get(key) || { pnl: 0, count: 0, wins: 0 };
       const pnl = parseFloat(t.netPnl ?? "0");
       map.set(key, { pnl: existing.pnl + pnl, count: existing.count + 1, wins: existing.wins + (pnl > 0 ? 1 : 0) });

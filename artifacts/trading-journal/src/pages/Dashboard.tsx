@@ -1,288 +1,366 @@
-import { useGetDashboardAnalytics, useGetEquityCurve, useGetTrades } from "@workspace/api-client-react";
-import { formatMoney, formatNumber, formatPercent } from "@/lib/formatters";
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { ArrowUpRight, ArrowDownRight, Activity, Target, Zap, Clock, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import ZellaScore from "@/components/ZellaScore";
+import { useState } from "react";
+import { Responsive as ResponsiveGrid, WidthProvider as WidthProviderHOC, Layout } from "react-grid-layout/legacy";
+const Responsive = ResponsiveGrid;
+const WidthProvider = WidthProviderHOC;
+import { useGetDashboardAnalytics, useGetEquityCurve, useGetTrades, useGetCalendarData } from "@workspace/api-client-react";
+import { useGetSettings } from "@/hooks/use-settings";
+import { Search, ChevronDown, Calendar as CalendarIcon, Users, Bell, Edit, Plus, GripHorizontal, Settings, Check, LayoutGrid, RotateCcw } from "lucide-react";
+
+import { useDashboardLayout } from "@/hooks/use-dashboard";
+import { AddWidgetPanel } from "@/components/dashboard/AddWidgetPanel";
+import { WidgetSettingsPanel } from "@/components/dashboard/WidgetSettingsPanel";
+import { motion } from "framer-motion";
+import { MarketReveal } from "@/components/dashboard/MarketReveal";
+import WidgetFrame from "@/components/dashboard/WidgetFrame";
+import { renderWidget } from "@/components/dashboard/WidgetRenderer";
+
+import TradeDrawer from "@/components/TradeDrawer";
+import CsvImportModal from "@/components/CsvImportModal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as UICalendar } from "@/components/ui/calendar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { toast } from "sonner";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function Dashboard() {
+  const [selectedTradeId, setSelectedTradeId] = useState<number | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [displayMode, setDisplayMode] = useState<"$" | "%">("$");
+  const [selectedAccount, setSelectedAccount] = useState("All Accounts");
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
+  
+  const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const { data: metrics, isLoading: isMetricsLoading } = useGetDashboardAnalytics();
   const { data: equityData, isLoading: isEquityLoading } = useGetEquityCurve();
-  const { data: recentTradesData } = useGetTrades({ limit: 5 });
+  const { data: recentTradesData, isLoading: isTradesLoading } = useGetTrades({ limit: 4 });
+  const { data: calendarData, isLoading: isCalendarLoading } = useGetCalendarData({ 
+    year: new Date().getFullYear(), month: new Date().getMonth() + 1 
+  });
+  const { data: settings } = useGetSettings();
 
-  if (isMetricsLoading || isEquityLoading) {
+  const {
+    isReady,
+    views,
+    activeView,
+    activeViewId,
+    switchView,
+    createView,
+    updateActiveView,
+    addWidgetToView,
+    removeWidgetFromView,
+    resetActiveView,
+    applyPreset,
+  } = useDashboardLayout();
+
+  if (!isReady || isMetricsLoading || isEquityLoading || isTradesLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-full h-full flex flex-col items-center justify-center p-20 gap-4">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin dark:shadow-[0_0_20px_hsl(252_87%_62%/0.3)]"></div>
+        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest animate-pulse">Loading your dashboard...</p>
       </div>
     );
   }
 
   if (!metrics || !equityData) return <div>Failed to load dashboard data.</div>;
 
-  const isProfit = metrics.netPnl >= 0;
+  const handleLayoutChange = (currentLayout: Layout[], allLayouts: any) => {
+    // Only save when editing so we don't spam localStorage on resize mount
+    if (isEditing) {
+      updateActiveView({ layouts: allLayouts });
+    }
+  };
+
+  const handleOpenSettings = (id: string) => {
+    setSettingsWidgetId(id);
+    setIsSettingsOpen(true);
+  };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12 relative min-h-screen">
+      <MarketReveal />
       
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">Overview</h1>
-        <p className="text-muted-foreground mt-1 text-lg">Your trading performance at a glance.</p>
-      </div>
-
-      {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className={`absolute top-0 right-0 w-32 h-32 blur-[50px] rounded-full transition-opacity opacity-20 group-hover:opacity-40 ${isProfit ? 'bg-profit' : 'bg-loss'}`} />
-          <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            Net P&L {isProfit ? <ArrowUpRight className="w-4 h-4 text-profit" /> : <ArrowDownRight className="w-4 h-4 text-loss" />}
-          </p>
-          <h3 className={`text-4xl font-display font-bold tracking-tight data-value ${isProfit ? 'text-profit' : 'text-loss'}`}>
-            {formatMoney(metrics.netPnl)}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-4 font-mono border-t border-white/5 pt-3">
-            Gross: {formatMoney(metrics.grossPnl)} | Comms: {formatMoney(metrics.totalCommissions)}
-          </p>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6">
-          <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            <Target className="w-4 h-4 text-primary" /> Win Rate
-          </p>
-          <div className="flex items-end gap-3">
-            <h3 className="text-4xl font-display font-bold data-value text-white">
-              {formatPercent(metrics.winRate)}
-            </h3>
-          </div>
-          <div className="w-full bg-background rounded-full h-1.5 mt-5 overflow-hidden">
-            <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.max(0, Math.min(100, metrics.winRate))}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 font-mono">{metrics.winningTrades}W - {metrics.losingTrades}L</p>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6">
-          <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-accent-foreground" /> Profit Factor
-          </p>
-          <h3 className="text-4xl font-display font-bold data-value text-white">
-            {formatNumber(metrics.profitFactor)}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-4 font-mono border-t border-white/5 pt-3">
-            Avg Win: <span className="text-profit">{formatMoney(metrics.avgWin)}</span> | Avg Loss: <span className="text-loss">{formatMoney(metrics.avgLoss)}</span>
-          </p>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6">
-          <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-yellow-500" /> Expectancy
-          </p>
-          <h3 className={`text-4xl font-display font-bold data-value ${metrics.expectancy >= 0 ? 'text-profit' : 'text-loss'}`}>
-            {formatMoney(metrics.expectancy)}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-4 font-mono border-t border-white/5 pt-3">
-            Per Trade Average
-          </p>
-        </div>
-      </div>
-
-      {/* Equity Curve Chart */}
-      <div className="glass-panel rounded-2xl p-6 col-span-full">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-display font-semibold">Equity Curve & Drawdown</h3>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="w-3 h-3 rounded-full bg-primary/50 border border-primary"></div>
-              Cumulative P&L
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="w-3 h-3 rounded-full bg-loss/20 border border-loss/50"></div>
-              Drawdown
-            </div>
-          </div>
-        </div>
-        <div className="h-[400px] w-full mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={equityData.points} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorDd" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--loss))" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="hsl(var(--loss))" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={12}
-                tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                tickMargin={10}
-              />
-              <YAxis 
-                yAxisId="left"
-                stroke="hsl(var(--muted-foreground))" 
-                fontSize={12}
-                tickFormatter={(val) => `$${val}`}
-                tickMargin={10}
-              />
-              <YAxis 
-                yAxisId="right"
-                orientation="right"
-                stroke="hsl(var(--loss))" 
-                fontSize={12}
-                tickFormatter={(val) => `${val}%`}
-                hide={true}
-              />
-              <RechartsTooltip 
-                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '8px' }}
-                formatter={(value: any, name: string) => {
-                  if (name === "cumulativePnl") return [formatMoney(value), "Cumulative P&L"];
-                  if (name === "drawdownPct") return [`${value}%`, "Drawdown"];
-                  return [value, name];
-                }}
-                labelFormatter={(label) => new Date(label).toLocaleDateString()}
-              />
-              <ReferenceLine y={0} yAxisId="left" stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} />
-              
-              <Area 
-                yAxisId="right"
-                type="monotone" 
-                dataKey="drawdownPct" 
-                stroke="hsl(var(--loss))" 
-                fillOpacity={1} 
-                fill="url(#colorDd)" 
-                strokeWidth={0}
-              />
-              <Area 
-                yAxisId="left"
-                type="monotone" 
-                dataKey="cumulativePnl" 
-                stroke="hsl(var(--primary))" 
-                fillOpacity={1} 
-                fill="url(#colorPnl)" 
-                strokeWidth={2}
-                activeDot={{ r: 6, fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Zella Score */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <ZellaScore />
-        </div>
-        <div className="lg:col-span-2 glass-panel rounded-2xl p-6">
-          <h3 className="text-xl font-display font-semibold mb-4">Additional Metrics</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
-              <p className="text-xs text-muted-foreground mb-1">Max Drawdown</p>
-              <p className="text-xl font-mono font-semibold text-loss">{formatMoney(metrics.maxDrawdown)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{formatPercent(metrics.maxDrawdownPct)} of peak</p>
-            </div>
-            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
-              <p className="text-xs text-muted-foreground mb-1">Sharpe Ratio</p>
-              <p className="text-xl font-mono font-semibold text-foreground">{formatNumber(metrics.sharpeRatio ?? 0)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Annualized</p>
-            </div>
-            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
-              <p className="text-xs text-muted-foreground mb-1">Avg Hold Time</p>
-              <p className="text-xl font-mono font-semibold text-foreground">{Math.round(metrics.avgHoldingMinutes)} min</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Per trade avg</p>
-            </div>
-            <div className="p-4 rounded-xl bg-background/50 border border-white/5">
-              <p className="text-xs text-muted-foreground mb-1">Current Streak</p>
-              <p className={`text-xl font-mono font-semibold ${metrics.currentStreakType === 'WIN' ? 'text-profit' : 'text-loss'}`}>
-                {metrics.currentStreak} {metrics.currentStreakType}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">Consecutive trades</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Secondary Metrics & Recent Trades */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Behavioral Summary */}
-        <div className="glass-panel rounded-2xl p-6 space-y-6">
-          <h3 className="text-xl font-display font-semibold">Stats & Streaks</h3>
+      {/* Navbar Style Top Area */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="flex justify-between items-center mb-2"
+      >
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-bold">Dashboard</h1>
           
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-background/50 rounded-xl border border-white/5">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <AlertTriangle className="w-5 h-5 text-loss" /> Max Drawdown
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm cursor-pointer hover:bg-primary/20 transition-colors dark:shadow-[0_0_12px_hsl(252_87%_62%/0.08)]">
+                <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+                <span className="text-primary">{activeView?.name}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-primary" />
               </div>
-              <span className="font-mono font-medium text-loss">{formatMoney(metrics.maxDrawdown)}</span>
-            </div>
-            
-            <div className="flex justify-between items-center p-3 bg-background/50 rounded-xl border border-white/5">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Clock className="w-5 h-5 text-primary" /> Avg Hold Time
-              </div>
-              <span className="font-mono font-medium">{Math.round(metrics.avgHoldingMinutes)} min</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-background/50 rounded-xl border border-white/5">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Zap className="w-5 h-5 text-yellow-500" /> Current Streak
-              </div>
-              <span className="font-mono font-medium flex items-center gap-2">
-                {metrics.currentStreak} {metrics.currentStreakType}
-                {metrics.currentStreakType === 'WIN' && <span className="w-2 h-2 rounded-full bg-profit"></span>}
-                {metrics.currentStreakType === 'LOSS' && <span className="w-2 h-2 rounded-full bg-loss"></span>}
-              </span>
-            </div>
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Dashboard Views</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {views.map(v => (
+                <DropdownMenuItem key={v.id} onClick={() => switchView(v.id)} className="font-semibold text-xs">
+                  {v.name}
+                  {v.id === activeViewId && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => {
+                const name = window.prompt("Enter a name for your new view:");
+                if (name) createView(name);
+              }} className="text-primary font-bold text-xs uppercase tracking-wider">
+                <Plus className="w-3.5 h-3.5 mr-2" /> New View
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Recent Trades Table */}
-        <div className="lg:col-span-2 glass-panel rounded-2xl p-6">
-          <h3 className="text-xl font-display font-semibold mb-6">Recent Trades</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-muted-foreground uppercase border-b border-border">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Symbol</th>
-                  <th className="px-4 py-3 font-medium">Type</th>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium text-right">Net P&L</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {recentTradesData?.trades.map((trade) => (
-                  <tr key={trade.id} className="hover:bg-white/5 transition-colors group">
-                    <td className="px-4 py-3 font-display font-semibold text-white uppercase">{trade.symbol}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={trade.direction === 'LONG' ? 'bg-profit/10 text-profit border-0' : 'bg-loss/10 text-loss border-0'} variant="outline">
-                        {trade.direction}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(trade.exitTime).toLocaleDateString()}</td>
-                    <td className={`px-4 py-3 text-right font-mono font-medium ${trade.netPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                      {formatMoney(trade.netPnl)}
-                    </td>
-                  </tr>
-                ))}
-                {!recentTradesData?.trades.length && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                      No recent trades found. Log a trade to see it here.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="flex items-center gap-3">
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex flex-col items-center justify-center min-w-[32px] min-h-[32px] bg-card border border-border rounded-xl text-xs font-bold shadow-sm cursor-pointer hover:bg-muted/50 hover:border-primary/20 transition-all group">
+                <span className="text-foreground group-hover:scale-110 group-hover:text-primary transition-all">{displayMode}</span>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-32">
+              <DropdownMenuLabel className="text-[10px]">Data Format</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setDisplayMode("$")}>Dollars ($)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDisplayMode("%")}>Percentage (%)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="flex items-center gap-2 bg-card border border-border px-3 py-2 rounded-xl text-xs font-semibold shadow-sm cursor-pointer hover:bg-muted/50 hover:border-primary/20 transition-all">
+                <Search className="w-3.5 h-3.5 text-muted-foreground" />
+                Filters
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-4">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Active Filters</h4>
+                <div className="text-[10px] text-muted-foreground space-y-2">
+                  <div className="flex justify-between border-b border-border pb-1">
+                    <span>Account</span>
+                    <span className="text-foreground">{selectedAccount}</span>
+                  </div>
+                </div>
+                <p className="text-[10px] italic text-muted-foreground">Click filters below to add...</p>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="flex items-center gap-2 bg-card border border-border px-3 py-2 rounded-xl text-xs font-semibold shadow-sm cursor-pointer hover:bg-muted/50 hover:border-primary/20 transition-all">
+                <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                Select Date
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <UICalendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-2 bg-card border border-border px-3 py-2 rounded-xl text-xs font-semibold shadow-sm cursor-pointer hover:bg-muted/50 hover:border-primary/20 transition-all min-w-[120px]">
+                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                {selectedAccount}
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto" />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-[10px]">Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSelectedAccount("All Accounts")}>All Accounts</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedAccount("Main Options")}>Main Portfolio</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <ThemeToggle />
+
+          <Popover>
+            <PopoverTrigger asChild>
+               {/* Notifications */}
+              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-card border border-border shadow-sm cursor-pointer relative hover:bg-muted/50 hover:border-primary/20 transition-all group">
+                <Bell className="w-4 h-4 text-muted-foreground group-hover:rotate-12 group-hover:text-primary transition-all" />
+                <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full border-2 border-background animate-pulse" />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold">Alerts</span>
+              </div>
+              <div className="space-y-2 p-3 rounded-lg bg-muted/30 text-xs text-muted-foreground border border-border">
+                No new alerts
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Control Area */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+        className="flex justify-between items-center bg-card/80 dark:bg-card/50 border border-border p-4 rounded-2xl shadow-sm backdrop-blur-xl dark:shadow-[0_2px_16px_rgba(0,0,0,0.3)]"
+      >
+        <h2 className="text-lg font-bold">Good morning {settings?.displayName || "Trader"}!</h2>
+        <div className="flex items-center gap-3">
+          
+          {isEditing ? (
+             <>
+                <button 
+                   onClick={resetActiveView}
+                   className="flex items-center gap-2 bg-destructive/10 text-destructive px-4 py-2 rounded-xl text-xs font-bold hover:bg-destructive/20 transition-colors"
+                 >
+                   <RotateCcw className="w-3.5 h-3.5" /> Reset View
+                 </button>
+               <button 
+                   onClick={() => setIsAddWidgetOpen(true)}
+                   className="flex items-center gap-2 bg-muted border border-border text-foreground px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-muted/70 hover:border-primary/20 transition-all"
+                 >
+                   <Plus className="w-3.5 h-3.5" /> Add Widget
+                 </button>
+                 <button 
+                   onClick={() => setIsEditing(false)}
+                   className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all scale-105"
+                 >
+                   <Check className="w-3.5 h-3.5" /> Done Editing
+                 </button>
+             </>
+          ) : (
+             <>
+                 <button 
+                   onClick={() => setIsEditing(true)}
+                   className="flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-muted/50 hover:border-primary/20 transition-all"
+                 >
+                   <Edit className="w-3.5 h-3.5" /> Edit Layout
+                 </button>
+                 <button 
+                   onClick={() => setIsImportModalOpen(true)}
+                   className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Record Trade
+                </button>
+             </>
+          )}
+        </div>
+      </motion.div>
+
+      {/* GRID LAYOUT */}
+      {activeView.widgets.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-20 border-2 border-dashed border-border dark:border-primary/15 rounded-3xl bg-muted/30 dark:bg-primary/[0.02] mt-8">
+           <LayoutGrid className="w-12 h-12 text-muted-foreground/40 mb-4" />
+           <h3 className="text-lg font-bold text-foreground">Your dashboard is empty.</h3>
+           <p className="text-sm text-muted-foreground mb-6 max-w-sm text-center">Customize your perfect trading station. Add charts, metrics, and tables to track your edge.</p>
+           <button 
+              onClick={() => { setIsEditing(true); setIsAddWidgetOpen(true); }}
+              className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all"
+           >
+             Start Building
+           </button>
+        </div>
+      ) : (
+        <div className="relative mt-4">
+          {/* Faint Grid Background when editing */}
+          {isEditing && (
+             <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: "linear-gradient(hsl(252 87% 62% / 0.15) 1px, transparent 1px), linear-gradient(90deg, hsl(252 87% 62% / 0.15) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+          )}
+          
+          <ResponsiveGridLayout
+            className="layout w-full z-10"
+            layouts={activeView.layouts}
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+            rowHeight={40}
+            onLayoutChange={handleLayoutChange}
+            isDraggable={isEditing}
+            isResizable={isEditing}
+            draggableHandle=".drag-handle"
+            margin={[16, 16]}
+            useCSSTransforms={true}
+          >
+            {activeView.widgets.map((widget) => (
+              <div key={widget.id} className="relative z-10 group overflow-visible">
+                <WidgetFrame 
+                  id={widget.id}
+                  title={widget.title}
+                  isEditing={isEditing}
+                  onRemove={removeWidgetFromView}
+                  onSettings={handleOpenSettings}
+                >
+                  {renderWidget(
+                    widget.type,
+                    metrics,
+                    equityData,
+                    recentTradesData,
+                    calendarData,
+                    displayMode,
+                    settings,
+                    setSelectedTradeId
+                  )}
+                </WidgetFrame>
+              </div>
+            ))}
+          </ResponsiveGridLayout>
+        </div>
+      )}
+
+      {/* Floating Add Widget Button in Edit Mode */}
+      {isEditing && activeView.widgets.length > 0 && (
+         <button 
+           onClick={() => setIsAddWidgetOpen(true)}
+            className="fixed bottom-12 right-12 w-14 h-14 bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 animate-bounce rounded-full flex items-center justify-center text-white shadow-2xl shadow-purple-500/40 z-50 transition-all border-none dark:shadow-[0_0_30px_rgba(139,92,246,0.5)]"
+         >
+           <Plus className="w-6 h-6" />
+         </button>
+      )}
+
+      {/* Modals & Drawers */}
+      <TradeDrawer tradeId={selectedTradeId} onClose={() => setSelectedTradeId(null)} />
+      <CsvImportModal open={isImportModalOpen} onOpenChange={setIsImportModalOpen} />
+      
+      <AddWidgetPanel 
+         open={isAddWidgetOpen} 
+         onOpenChange={setIsAddWidgetOpen} 
+         onAdd={(type, defaults) => addWidgetToView({ id: `${type}_${Date.now()}`, type, ...defaults })}
+         onApplyPreset={applyPreset}
+      />
+      
+      <WidgetSettingsPanel 
+         open={isSettingsOpen}
+         onOpenChange={setIsSettingsOpen}
+         widgetId={settingsWidgetId}
+         currentSettings={{}} // TODO wire this up
+         onSave={() => setIsSettingsOpen(false)}
+      />
+
     </div>
   );
 }

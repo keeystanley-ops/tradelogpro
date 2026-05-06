@@ -102,8 +102,11 @@ router.get("/insights", async (_req, res) => {
 
     // --- PSYCHOLOGY INSIGHTS ---
     // Compare confident vs fearful/greedy
-    const confidentTrades = allTrades.filter(t => t.emotionTag === "Confident");
-    const fearfulTrades = allTrades.filter(t => t.emotionTag === "Fearful" || t.emotionTag === "Greedy" || t.emotionTag === "Frustrated");
+    const confidentTrades = allTrades.filter(t => ((t as any).emotions || []).includes("Confident"));
+    const fearfulTrades = allTrades.filter(t => {
+      const emo = (t as any).emotions || [];
+      return emo.includes("Fearful") || emo.includes("Greedy") || emo.includes("Frustrated");
+    });
 
     if (confidentTrades.length >= 5 && fearfulTrades.length >= 5) {
       const confidentWR = confidentTrades.filter(t => parseN(t.netPnl) > 0).length / confidentTrades.length * 100;
@@ -190,12 +193,12 @@ router.get("/insights", async (_req, res) => {
 
     // --- PERFORMANCE ---
     // Best vs worst setup
-    const bySetup = new Map<string, { pnl: number; count: number; wins: number }>();
+    const bySetup = new Map<number, { pnl: number; count: number; wins: number }>();
     for (const t of allTrades) {
-      if (t.setupTag) {
-        const existing = bySetup.get(t.setupTag) || { pnl: 0, count: 0, wins: 0 };
+      if (t.playbookId) {
+        const existing = bySetup.get(t.playbookId) || { pnl: 0, count: 0, wins: 0 };
         const pnl = parseN(t.netPnl);
-        bySetup.set(t.setupTag, { pnl: existing.pnl + pnl, count: existing.count + 1, wins: existing.wins + (pnl > 0 ? 1 : 0) });
+        bySetup.set(t.playbookId, { pnl: existing.pnl + pnl, count: existing.count + 1, wins: existing.wins + (pnl > 0 ? 1 : 0) });
       }
     }
 
@@ -218,7 +221,7 @@ router.get("/insights", async (_req, res) => {
     }
 
     // Mistake frequency
-    const tradesWithMistakes = allTrades.filter(t => t.mistakeTag);
+    const tradesWithMistakes = allTrades.filter(t => ((t as any).mistakes || []).length > 0);
     if (tradesWithMistakes.length > 0) {
       const mistakePct = (tradesWithMistakes.length / allTrades.length) * 100;
       if (mistakePct > 25) {
