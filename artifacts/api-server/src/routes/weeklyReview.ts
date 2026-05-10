@@ -75,10 +75,10 @@ router.get("/weekly-review", async (req: AuthenticatedRequest, res) => {
     const expectancy = (winRate / 100 * avgWin) - ((100 - winRate) / 100 * avgLoss);
 
     const rMultiples = trades.filter(t => t.rMultiple).map(t => parseN(t.rMultiple));
-    const avgRR = rMultiples.length > 0 ? rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length : 0;
+    const avgRR = rMultiples.length > 0 ? rMultiples.reduce((a: number, b: number) => a + b, 0) / rMultiples.length : 0;
 
-    const bestTrade = trades.reduce((a, b) => parseN(a.netPnl) > parseN(b.netPnl) ? a : b);
-    const worstTrade = trades.reduce((a, b) => parseN(a.netPnl) < parseN(b.netPnl) ? a : b);
+    const bestTrade = trades.reduce((a: any, b: any) => parseN(a.netPnl) > parseN(b.netPnl) ? a : b);
+    const worstTrade = trades.reduce((a: any, b: any) => parseN(a.netPnl) < parseN(b.netPnl) ? a : b);
 
     // Group by Day for Trend
     const dailyMap = new Map<string, number>();
@@ -155,8 +155,8 @@ router.get("/weekly-review", async (req: AuthenticatedRequest, res) => {
       totalTrades: trades.length,
       avgRR: parseFloat(avgRR.toFixed(2)),
       expectancy,
-      largestWin: Math.max(...trades.map(t => parseN(t.netPnl))),
-      largestLoss: Math.min(...trades.map(t => parseN(t.netPnl))),
+      largestWin: Math.max(...trades.map((t: any) => parseN(t.netPnl))),
+      largestLoss: Math.min(...trades.map((t: any) => parseN(t.netPnl))),
       maxDrawdown: 0, // Simplified for week
       dailyPnl: dailyPnlTrend,
       sessionPerformance,

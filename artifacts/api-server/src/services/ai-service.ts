@@ -138,7 +138,7 @@ export class AIService {
       // 3. Run AI Analysis
       const result = await this.analyzeTrade({
         tradeData: trade,
-        strategyRules: strategies.map(s => s.structuredRules),
+        strategyRules: strategies.map((s: any) => s.structuredRules),
         emotionalContext: (trade as any).emotions,
         notes: trade.notes || "",
       });
