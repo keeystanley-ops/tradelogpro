@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateTrade } from "@workspace/api-client-react";
-import { getGetTradesQueryKey, getGetDashboardAnalyticsQueryKey, getGetCalendarDataQueryKey } from "@workspace/api-client-react";
+import { getGetTradesQueryKey, getGetDashboardAnalyticsQueryKey, getGetCalendarDataQueryKey, getGetWeeklyReviewQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -69,6 +69,7 @@ export default function AddTradeModal({ open, onOpenChange }: { open: boolean; o
         queryClient.invalidateQueries({ queryKey: getGetTradesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetDashboardAnalyticsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetCalendarDataQueryKey() });
+        queryClient.invalidateQueries({ queryKey: [getGetWeeklyReviewQueryKey()[0]] });
         form.reset();
         onOpenChange(false);
       },

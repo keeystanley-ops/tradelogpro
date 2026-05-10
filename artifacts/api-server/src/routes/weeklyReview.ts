@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { tradesTable } from "@workspace/db";
 import { and, gte, lte, eq } from "drizzle-orm";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -26,7 +27,7 @@ function mapTrade(t: any) {
   };
 }
 
-router.get("/weekly-review", async (req, res) => {
+router.get("/weekly-review", async (req: AuthenticatedRequest, res) => {
   try {
     const now = new Date();
     let weekStart: Date;
@@ -40,9 +41,12 @@ router.get("/weekly-review", async (req, res) => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
+    const userId = req.userId;
     const trades = await db.select().from(tradesTable).where(
       and(
+        eq(tradesTable.userId, userId),
         eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false),
         gte(tradesTable.exitTime, weekStart),
         lte(tradesTable.exitTime, weekEnd),
       )
@@ -60,66 +64,117 @@ router.get("/weekly-review", async (req, res) => {
 
     const netPnl = trades.reduce((a, t) => a + parseN(t.netPnl), 0);
     const winners = trades.filter(t => parseN(t.netPnl) > 0);
+    const losers = trades.filter(t => parseN(t.netPnl) <= 0);
     const winRate = (winners.length / trades.length) * 100;
+
+    const totalWins = winners.reduce((a, t) => a + parseN(t.netPnl), 0);
+    const totalLosses = Math.abs(losers.reduce((a, t) => a + parseN(t.netPnl), 0));
+    
+    const avgWin = winners.length > 0 ? totalWins / winners.length : 0;
+    const avgLoss = losers.length > 0 ? totalLosses / losers.length : 0;
+    const expectancy = (winRate / 100 * avgWin) - ((100 - winRate) / 100 * avgLoss);
+
+    const rMultiples = trades.filter(t => t.rMultiple).map(t => parseN(t.rMultiple));
+    const avgRR = rMultiples.length > 0 ? rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length : 0;
 
     const bestTrade = trades.reduce((a, b) => parseN(a.netPnl) > parseN(b.netPnl) ? a : b);
     const worstTrade = trades.reduce((a, b) => parseN(a.netPnl) < parseN(b.netPnl) ? a : b);
 
-    // Top playbook
-    const playbookCounts = new Map<number, number>();
+    // Group by Day for Trend
+    const dailyMap = new Map<string, number>();
     for (const t of trades) {
-      if (t.playbookId) playbookCounts.set(t.playbookId, (playbookCounts.get(t.playbookId) || 0) + 1);
+      const day = new Date(t.exitTime!).toLocaleDateString('en-US', { weekday: 'short' });
+      dailyMap.set(day, (dailyMap.get(day) || 0) + parseN(t.netPnl));
     }
-    const topSetup = playbookCounts.size > 0 ? [...playbookCounts.entries()].sort((a, b) => b[1] - a[1])[0][0] : null;
+    const daysOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dailyPnlTrend = daysOrder.map(day => ({ date: day, pnl: dailyMap.get(day) || 0 }));
 
-    // Top mistake (from mistakes array)
-    const mistakeCounts = new Map<string, number>();
+    // Session Performance (Simplified by entry hour)
+    const sessions = { 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 }, 'Asia': { pnl: 0, count: 0 } };
+    for (const t of trades) {
+      const hour = new Date(t.entryTime!).getUTCHours();
+      let session: keyof typeof sessions = 'Asia';
+      if (hour >= 8 && hour < 14) session = 'London';
+      else if (hour >= 13 && hour < 20) session = 'New York';
+      
+      sessions[session].pnl += parseN(t.netPnl);
+      sessions[session].count++;
+    }
+    const sessionPerformance = Object.entries(sessions).map(([name, data]) => ({ 
+      name, pnl: data.pnl, tradeCount: data.count 
+    }));
+
+    // Strategy Performance
+    const strategyMap = new Map<number | string, { pnl: number, wins: number, count: number, rSum: number }>();
+    for (const t of trades) {
+      const key = t.playbookId || 'Untagged';
+      const stats = strategyMap.get(key) || { pnl: 0, wins: 0, count: 0, rSum: 0 };
+      stats.pnl += parseN(t.netPnl);
+      if (parseN(t.netPnl) > 0) stats.wins++;
+      stats.count++;
+      stats.rSum += t.rMultiple ? parseN(t.rMultiple) : 0;
+      strategyMap.set(key, stats);
+    }
+    const strategies = Array.from(strategyMap.entries()).map(([name, s]) => ({
+      name: name === 'Untagged' ? 'General' : `System ${name}`,
+      winRate: Math.round((s.wins / s.count) * 100),
+      pnl: s.pnl,
+      avgRR: s.count > 0 ? (s.rSum / s.count).toFixed(1) : 0
+    }));
+
+    // Risk Distribution
+    const riskBuckets = { 'Low': 0, 'Med': 0, 'High': 0 };
+    for (const t of trades) {
+      const r = t.rMultiple ? parseN(t.rMultiple) : 0;
+      if (r < 0.5) riskBuckets['Low']++;
+      else if (r < 1.5) riskBuckets['Med']++;
+      else riskBuckets['High']++;
+    }
+    const riskDistribution = Object.entries(riskBuckets).map(([risk, count]) => ({ risk, count }));
+
+    // AI Insights (Dynamic based on real data)
+    const weekInsights: string[] = [];
+    if (winRate > 60) weekInsights.push(`Outstanding execution this week with a ${winRate.toFixed(1)}% win rate.`);
+    if (netPnl < 0) weekInsights.push(`Drawdown detected. Focus on risk management and wait for A+ setups next week.`);
+    const bestSession = sessionPerformance.reduce((a, b) => a.pnl > b.pnl ? a : b);
+    if (bestSession.pnl > 0) weekInsights.push(`The ${bestSession.name} session was your primary profit driver.`);
+    
+    // Discipline / Mistakes
+    const mistakesCount = new Map<string, number>();
     for (const t of trades) {
       const mistakes = (t as any).mistakes || [];
-      for (const m of mistakes) {
-        mistakeCounts.set(m, (mistakeCounts.get(m) || 0) + 1);
-      }
+      mistakes.forEach((m: string) => mistakesCount.set(m, (mistakesCount.get(m) || 0) + 1));
     }
-    const topMistake = mistakeCounts.size > 0 ? [...mistakeCounts.entries()].sort((a, b) => b[1] - a[1])[0][0] : null;
-
-    // Consistency score: % of trading days profitable
-    const byDate = new Map<string, number>();
-    for (const t of trades) {
-      const dt = t.exitTime instanceof Date ? t.exitTime : new Date(t.exitTime);
-      const date = dt.toISOString().slice(0, 10);
-      byDate.set(date, (byDate.get(date) || 0) + parseN(t.netPnl));
-    }
-    const profitDays = Array.from(byDate.values()).filter(p => p > 0).length;
-    const consistencyScore = byDate.size > 0 ? (profitDays / byDate.size) * 100 : 0;
-
-    // Equity curve for the week
-    const sortedDates = Array.from(byDate.keys()).sort();
-    let cumPnl = 0;
-    const equityCurve = sortedDates.map(date => {
-      const pnl = byDate.get(date)!;
-      cumPnl += pnl;
-      return {
-        date, cumulativePnl: cumPnl, drawdown: 0, drawdownPct: 0,
-        dailyPnl: pnl, tradeCount: Array.from(byDate.keys()).filter(d => d === date).length,
-      };
-    });
-
-    // AI-style rule-based insights
-    const weekInsights: string[] = [];
-    if (winRate >= 60) weekInsights.push(`Strong week: ${winRate.toFixed(0)}% win rate — above your target threshold.`);
-    else if (winRate < 40) weekInsights.push(`Tough week: ${winRate.toFixed(0)}% win rate. Review your entry criteria.`);
-    if (topMistake) weekInsights.push(`Your most common mistake was "${topMistake}" — focus on eliminating this next week.`);
-    if (topSetup) weekInsights.push(`"${topSetup}" was your most active setup — make sure it remains your best-performing one.`);
-    if (trades.length > 20) weekInsights.push("You took a high volume of trades this week. Consider reducing to only A+ setups.");
-    if (consistencyScore >= 80) weekInsights.push("Excellent consistency — you were profitable on most trading days.");
+    const discipline = Array.from(mistakesCount.entries()).map(([label, count]) => ({
+      label, count, impact: -100 * count, type: 'negative'
+    }));
 
     res.json({
-      weekStart: weekStart.toISOString().slice(0, 10),
-      weekEnd: weekEnd.toISOString().slice(0, 10),
-      netPnl, winRate, totalTrades: trades.length,
-      bestTrade: mapTrade(bestTrade), worstTrade: mapTrade(worstTrade),
-      topSetup, topMistake, consistencyScore, insights: weekInsights,
-      equityCurve,
+      netPnl,
+      winRate,
+      totalTrades: trades.length,
+      avgRR: parseFloat(avgRR.toFixed(2)),
+      expectancy,
+      largestWin: Math.max(...trades.map(t => parseN(t.netPnl))),
+      largestLoss: Math.min(...trades.map(t => parseN(t.netPnl))),
+      maxDrawdown: 0, // Simplified for week
+      dailyPnl: dailyPnlTrend,
+      sessionPerformance,
+      winLossData: [
+        { name: 'Wins', value: winners.length, color: 'hsl(var(--profit))' },
+        { name: 'Losses', value: losers.length, color: 'hsl(var(--loss))' },
+      ],
+      strategies,
+      discipline,
+      risk: {
+         riskDistribution
+      },
+      aiInsights: weekInsights,
+      highlights: {
+        best: [mapTrade(bestTrade)],
+        worst: mapTrade(worstTrade)
+      },
+      goals: [] // Could pull from db if implemented
     });
   } catch (err) {
     console.error(err);

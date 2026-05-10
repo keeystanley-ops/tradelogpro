@@ -1,13 +1,19 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { challengesTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+import type { AuthenticatedRequest } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", async (req: AuthenticatedRequest, res) => {
   try {
-    const challenges = await db.select().from(challengesTable).orderBy(desc(challengesTable.createdAt));
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const challenges = await db.select().from(challengesTable)
+      .where(eq(challengesTable.userId, userId))
+      .orderBy(desc(challengesTable.createdAt));
     res.json({ challenges });
   } catch (err) {
     console.error(err);
@@ -15,10 +21,14 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     const { name, description, type, targetMetrics, startDate, endDate } = req.body;
     const [challenge] = await db.insert(challengesTable).values({
+      userId,
       name,
       description: description || "",
       type: type || "CONSISTENCY",
@@ -35,13 +45,16 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     const id = parseInt(req.params.id);
     const { name, description, status, progress, targetMetrics } = req.body;
     const [challenge] = await db.update(challengesTable)
       .set({ name, description, status, progress, targetMetrics })
-      .where(eq(challengesTable.id, id))
+      .where(and(eq(challengesTable.id, id), eq(challengesTable.userId, userId)))
       .returning();
     if (!challenge) return res.status(404).json({ error: "Challenge not found" });
     res.json(challenge);
@@ -51,10 +64,13 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
     const id = parseInt(req.params.id);
-    await db.delete(challengesTable).where(eq(challengesTable.id, id));
+    await db.delete(challengesTable).where(and(eq(challengesTable.id, id), eq(challengesTable.userId, userId)));
     res.json({ success: true });
   } catch (err) {
     console.error(err);

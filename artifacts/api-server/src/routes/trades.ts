@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { tradesTable } from "@workspace/db";
 import { eq, and, gte, lte, desc, count } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../middleware/auth";
+import { AIService } from "../services/ai-service";
 
 const router: IRouter = Router();
 
@@ -71,6 +72,9 @@ function mapTrade(t: any) {
 
     notes: t.notes,
     rating: t.rating,
+
+    isBacktest: t.isBacktest,
+    backtestSessionId: t.backtestSessionId,
 
     createdAt: t.createdAt?.toISOString?.() || t.createdAt,
   };
@@ -163,44 +167,39 @@ router.post("/", async (req: AuthenticatedRequest, res) => {
 
     const [trade] = await db.insert(tradesTable).values({
       userId,
-
-      // 🔥 RELATION FIX
       playbookId: body.playbookId || null,
-
       symbol: body.symbol.toUpperCase(),
       assetClass: body.assetClass,
       direction: body.direction,
-
       quantity: qty.toString(),
       entryPrice: entry.toString(),
       exitPrice: exit.toString(),
-
       entryTime,
       exitTime,
       durationSeconds,
-
       grossPnl: grossPnl.toFixed(4),
       netPnl: netPnl.toFixed(4),
-
       commissions: commissions.toFixed(4),
       fees: fees.toFixed(4),
       slippage: slippage.toFixed(4),
-
       stopLoss: stopLoss ? stopLoss.toString() : null,
       rMultiple: rMultiple ? rMultiple.toFixed(4) : null,
-
       status: "CLOSED",
       importSource: "MANUAL",
-
-      // 🔥 NEW FIELDS
       followedRules: body.followedRules ?? false,
       mistakes: body.mistakes || [],
       emotions: body.emotions || [],
       grade: body.grade || null,
-
       notes: body.notes || null,
       rating: body.rating || null,
+      isBacktest: body.is_backtest ?? false,
+      backtestSessionId: body.backtest_session_id || null,
     }).returning();
+
+    // AI Background Analysis Trigger
+    if (trade.status === "CLOSED" && !trade.isBacktest) {
+      AIService.triggerAnalysisForTrade(trade.id, userId);
+    }
 
     res.status(201).json(mapTrade(trade));
 
@@ -231,13 +230,18 @@ router.patch("/:id", async (req: AuthenticatedRequest, res) => {
     if (body.notes !== undefined) updates.notes = body.notes;
     if (body.rating !== undefined) updates.rating = body.rating;
 
-    const [trade] = await db.update(tradesTable).set(updates).where(
+    const [updatedTrade] = await db.update(tradesTable).set(updates).where(
       and(eq(tradesTable.id, parseInt(req.params.id)), eq(tradesTable.userId, userId))
     ).returning();
 
-    if (!trade) return res.status(404).json({ error: "Trade not found" });
+    if (!updatedTrade) return res.status(404).json({ error: "Trade not found" });
 
-    res.json(mapTrade(trade));
+    // AI Background Analysis Trigger
+    if (updatedTrade.status === "CLOSED" && !updatedTrade.isBacktest) {
+      AIService.triggerAnalysisForTrade(updatedTrade.id, userId);
+    }
+
+    res.json(mapTrade(updatedTrade));
 
   } catch (err) {
     res.status(500).json({ error: "Failed to update trade" });
@@ -260,6 +264,61 @@ router.delete("/:id", async (req: AuthenticatedRequest, res) => {
 
   } catch (err) {
     res.status(500).json({ error: "Failed to delete trade" });
+  }
+});
+
+/**
+ * IMPORT TRADES (Bulk)
+ */
+router.post("/import", async (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { trades: rawTrades } = req.body;
+    if (!Array.isArray(rawTrades)) return res.status(400).json({ error: "Invalid trades array" });
+
+    const importedTrades = [];
+    for (const t of rawTrades) {
+      const entry = parseN(t.entryPrice);
+      const exit = parseN(t.exitPrice);
+      const qty = parseN(t.quantity);
+      const comm = parseN(t.commission || 0);
+
+      const grossPnl = calcPnl(t.direction, qty, entry, exit);
+      const netPnl = grossPnl - comm;
+
+      const entryTime = new Date(t.entryTime || t.entryDate);
+      const exitTime = new Date(t.exitTime || t.exitDate);
+      const durationSeconds = Math.floor((exitTime.getTime() - entryTime.getTime()) / 1000);
+
+      const [inserted] = await db.insert(tradesTable).values({
+        userId,
+        symbol: t.symbol.toUpperCase(),
+        assetClass: t.assetClass || "STOCK",
+        direction: t.direction,
+        quantity: qty.toString(),
+        entryPrice: entry.toString(),
+        exitPrice: exit.toString(),
+        entryTime,
+        exitTime,
+        durationSeconds,
+        grossPnl: grossPnl.toFixed(4),
+        netPnl: netPnl.toFixed(4),
+        commissions: comm.toFixed(4),
+        status: "CLOSED",
+        importSource: "CSV",
+      }).returning();
+
+      // Trigger AI analysis in background
+      AIService.triggerAnalysisForTrade(inserted.id, userId);
+      importedTrades.push(inserted);
+    }
+
+    res.json({ imported: importedTrades.length, failed: rawTrades.length - importedTrades.length });
+  } catch (err) {
+    console.error("IMPORT ERROR:", err);
+    res.status(500).json({ error: "Failed to import trades" });
   }
 });
 

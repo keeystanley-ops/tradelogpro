@@ -19,7 +19,9 @@ import {
   Calendar as CalendarIconLucide,
   ArrowUpRight,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  Waves
 } from "lucide-react";
 
 export function renderWidget(
@@ -42,6 +44,24 @@ export function renderWidget(
   ];
 
   switch (type) {
+    case "FloatingPnl":
+      const floatingVal = Math.floor(Math.random() * 500) - 100; // Simulated
+      return (
+        <MetricCard 
+          className="h-full bg-gradient-to-br from-primary/5 to-transparent border-primary/20"
+          label="Floating P&L" 
+          icon={<Waves className="animate-pulse" />}
+          description="Live open positions"
+          value={formatMoney(floatingVal)}
+          valueColor={floatingVal >= 0 ? "text-emerald-500" : "text-rose-500"}
+          secondary={
+            <div className="flex items-center gap-2 mt-1">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live from MT5</span>
+            </div>
+          }
+        />
+      );
     case "NetPnl":
       return (
         <MetricCard 
@@ -51,7 +71,7 @@ export function renderWidget(
           description={`Total from ${metrics.totalTrades ?? 0} trades`}
           value={displayMode === "$" 
             ? formatMoney(metrics.netPnl ?? 0) 
-            : formatPercent((metrics.netPnl ?? 0) / 1000)
+            : formatPercent((metrics.netPnl ?? 0) / (settings?.startingBalance || 10000))
           }
           valueColor={(metrics.netPnl ?? 0) >= 0 ? "text-emerald-500" : "text-rose-500"}
           secondary={<div className="h-12 w-full bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 overflow-hidden flex items-end"><div className="h-2/3 w-full bg-emerald-500/10 dark:bg-emerald-500/20" style={{ width: '100%' }}></div></div>}
@@ -149,25 +169,13 @@ export function renderWidget(
            onTradeClick={onTradeClick}
         /></div>
       );
-    case "CurrentStreak":
-      return (
-        <MetricCard 
-          className="h-full"
-          label="Current Streak" 
-          icon={<Activity />}
-          description={metrics.currentStreakType ? `${metrics.currentStreakType} streak` : "No active streak"}
-          value={`${metrics.currentStreak ?? 0}${metrics.currentStreakType === 'WIN' ? 'W' : metrics.currentStreakType === 'LOSS' ? 'L' : ''}`}
-          valueColor={metrics.currentStreakType === "WIN" ? "text-emerald-500" : metrics.currentStreakType === "LOSS" ? "text-rose-500" : "text-muted-foreground"}
-          secondary={<div className="h-12 w-full bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 overflow-hidden flex items-end"><div className="h-1/3 w-full bg-blue-500/10 dark:bg-blue-500/20" style={{ width: '40%' }}></div></div>}
-        />
-      );
     case "AccountBalance":
       const startingBalance = parseFloat(settings?.startingBalance ?? "10000");
       const currentBalance = startingBalance + (metrics.netPnl ?? 0);
       return (
         <MetricCard 
           className="h-full"
-          label="Balance" 
+          label="Live Balance" 
           icon={<Wallet />}
           description={`Starting: ${formatMoney(startingBalance)}`}
           value={formatMoney(currentBalance)}
@@ -175,7 +183,6 @@ export function renderWidget(
         />
       );
 
-    // ─── NEW METRIC WIDGETS ───────────────────────────────────
     case "TotalTrades":
       return (
         <MetricCard
@@ -240,30 +247,6 @@ export function renderWidget(
           valueColor="text-rose-500"
         />
       );
-    case "AvgRMultiple":
-      return (
-        <MetricCard
-          className="h-full"
-          label="Avg R-Multiple"
-          icon={<Activity />}
-          description="Risk-adjusted return"
-          value={`${(metrics.avgRMultiple ?? 0).toFixed(2)}R`}
-          valueColor={(metrics.avgRMultiple ?? 0) >= 0 ? "text-emerald-500" : "text-rose-500"}
-        />
-      );
-    case "ConsecutiveWins":
-      return (
-        <MetricCard
-          className="h-full"
-          label="Best Win Streak"
-          icon={<Activity />}
-          description="Consecutive wins"
-          value={`${metrics.bestWinStreak ?? 0}W`}
-          valueColor="text-emerald-500"
-        />
-      );
-
-    // ─── NEW CHART / TABLE WIDGETS ────────────────────────────
     case "WinRateByDay":
       return (
         <div className="h-full w-full p-6 flex flex-col">
@@ -275,28 +258,6 @@ export function renderWidget(
                 <span className="text-[9px] text-muted-foreground font-bold">{d}</span>
               </div>
             ))}
-          </div>
-        </div>
-      );
-    case "PnlDistribution":
-      return (
-        <div className="h-full w-full p-6 flex flex-col">
-          <h3 className="text-sm font-bold mb-4">P&L Distribution</h3>
-          <div className="flex-1 flex items-end gap-1 pb-4">
-            {Array.from({ length: 12 }).map((_, i) => {
-              const isLoss = i < 5;
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end">
-                  <div
-                    className={`w-full rounded-lg ${isLoss ? "bg-rose-500/20" : "bg-emerald-500/20"}`}
-                    style={{ height: `${10 + Math.random()*70}%` }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex justify-between text-[9px] text-muted-foreground font-semibold">
-            <span>-$500</span><span>$0</span><span>+$500</span>
           </div>
         </div>
       );
@@ -317,30 +278,6 @@ export function renderWidget(
                 </div>
               );
             })}
-          </div>
-        </div>
-      );
-    case "TopSymbols":
-      return (
-        <div className="h-full w-full p-6 flex flex-col">
-          <h3 className="text-sm font-bold mb-4">Top Symbols</h3>
-          <div className="flex-1 space-y-2">
-            {(metrics.topSymbols || ["SPY","AAPL","TSLA","QQQ"]).slice(0, 5).map((sym: string, i: number) => (
-              <div key={sym} className="flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-white/5">
-                <span className="text-[10px] font-bold text-muted-foreground w-4">{i+1}</span>
-                <span className="text-xs font-bold flex-1">{sym}</span>
-                <span className="text-[10px] font-semibold text-muted-foreground">{Math.floor(Math.random()*20 + 5)} trades</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    case "MarketNotes":
-      return (
-        <div className="h-full w-full p-6 flex flex-col">
-          <h3 className="text-sm font-bold mb-3">Market Notes</h3>
-          <div className="flex-1 rounded-xl bg-slate-50 dark:bg-white/5 border-2 border-dashed border-slate-100 dark:border-white/5 p-4 text-xs text-muted-foreground">
-            <p className="italic">Click to add your market observations, key levels, or daily trading plan...</p>
           </div>
         </div>
       );

@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { tradesTable } from "@workspace/db";
 import { and, gte, lte, sql, eq, desc } from "drizzle-orm";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -9,12 +10,17 @@ function parseN(v: any): number {
   return parseFloat(v) || 0;
 }
 
-router.get("/dashboard", async (req, res) => {
+router.get("/dashboard", async (req: AuthenticatedRequest, res) => {
   try {
+    console.log(`[Dashboard] Fetching analytics for user ${req.userId}...`);
     const conditions = [];
+    if (req.userId) conditions.push(eq(tradesTable.userId, req.userId));
+    conditions.push(eq(tradesTable.isBacktest, false));
+
     if (req.query.startDate) conditions.push(gte(tradesTable.entryTime, new Date(req.query.startDate as string)));
     if (req.query.endDate) conditions.push(lte(tradesTable.entryTime, new Date(req.query.endDate as string)));
-    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const where = and(...conditions);
 
     const trades = await db.select().from(tradesTable).where(where).orderBy(tradesTable.entryTime);
 
@@ -123,9 +129,10 @@ router.get("/dashboard", async (req, res) => {
   }
 });
 
-router.get("/equity-curve", async (req, res) => {
+router.get("/equity-curve", async (req: AuthenticatedRequest, res) => {
   try {
-    const conditions = [eq(tradesTable.status, "CLOSED")];
+    const conditions = [eq(tradesTable.status, "CLOSED"), eq(tradesTable.isBacktest, false)];
+    if (req.userId) conditions.push(eq(tradesTable.userId, req.userId));
     if (req.query.startDate) conditions.push(gte(tradesTable.entryTime, new Date(req.query.startDate as string)));
     if (req.query.endDate) conditions.push(lte(tradesTable.entryTime, new Date(req.query.endDate as string)));
 
@@ -158,9 +165,16 @@ router.get("/equity-curve", async (req, res) => {
   }
 });
 
-router.get("/heatmap", async (req, res) => {
+router.get("/heatmap", async (req: AuthenticatedRequest, res) => {
   try {
-    const trades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED"));
+    const userId = req.userId;
+    const trades = await db.select().from(tradesTable).where(
+      and(
+        eq(tradesTable.userId, userId),
+        eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false)
+      )
+    );
 
     // hour 0-23, dayOfWeek 0-6 (0=Sunday)
     const grid = new Map<string, { pnl: number; count: number; wins: number }>();
@@ -193,9 +207,16 @@ router.get("/heatmap", async (req, res) => {
   }
 });
 
-router.get("/symbols", async (req, res) => {
+router.get("/symbols", async (req: AuthenticatedRequest, res) => {
   try {
-    const trades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED"));
+    const userId = req.userId;
+    const trades = await db.select().from(tradesTable).where(
+      and(
+        eq(tradesTable.userId, userId),
+        eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false)
+      )
+    );
 
     const bySymbol = new Map<string, { pnl: number; count: number; wins: number }>();
     for (const t of trades) {
@@ -232,9 +253,12 @@ router.get("/calendar", async (req, res) => {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1);
 
+    const userId = req.userId;
     const trades = await db.select().from(tradesTable).where(
       and(
+        eq(tradesTable.userId, userId),
         eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false),
         gte(tradesTable.exitTime, startDate),
         lte(tradesTable.exitTime, endDate)
       )
@@ -266,9 +290,16 @@ router.get("/calendar", async (req, res) => {
   }
 });
 
-router.get("/behavioral", async (req, res) => {
+router.get("/behavioral", async (req: AuthenticatedRequest, res) => {
   try {
-    const trades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED"));
+    const userId = req.userId;
+    const trades = await db.select().from(tradesTable).where(
+      and(
+        eq(tradesTable.userId, userId),
+        eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false)
+      )
+    );
 
     // Mistake distribution (from mistakes array)
     const mistakeMap = new Map<string, { count: number; totalLoss: number }>();
@@ -362,12 +393,13 @@ router.get("/behavioral", async (req, res) => {
 });
 
 // ─── Zella Score ──────────────────────────────────────────────────────────────
-router.get("/zella-score", async (req, res) => {
+router.get("/zella-score", async (req: AuthenticatedRequest, res) => {
   try {
-    const conditions = [];
+    const userId = req.userId;
+    const conditions = [eq(tradesTable.userId, userId), eq(tradesTable.status, "CLOSED"), eq(tradesTable.isBacktest, false)];
     if (req.query.startDate) conditions.push(gte(tradesTable.entryTime, new Date(req.query.startDate as string)));
     if (req.query.endDate) conditions.push(lte(tradesTable.entryTime, new Date(req.query.endDate as string)));
-    const where = conditions.length > 0 ? and(eq(tradesTable.status, "CLOSED"), ...conditions) : eq(tradesTable.status, "CLOSED");
+    const where = and(...conditions);
 
     const trades = await db.select().from(tradesTable).where(where).orderBy(tradesTable.entryTime);
     const closed = trades.filter(t => t.status === "CLOSED");
@@ -596,7 +628,14 @@ router.get("/reports/by-time", async (req, res) => {
 
 router.get("/reports/streaks", async (req, res) => {
   try {
-    const trades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED")).orderBy(tradesTable.exitTime);
+    const userId = (req as any).userId;
+    const trades = await db.select().from(tradesTable).where(
+      and(
+        eq(tradesTable.userId, userId),
+        eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false)
+      )
+    ).orderBy(tradesTable.exitTime);
     const streaks: { type: "WIN" | "LOSS"; length: number; startIdx: number; endIdx: number }[] = [];
     let i = 0;
     while (i < trades.length) {

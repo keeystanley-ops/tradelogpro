@@ -1,13 +1,22 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { notebooksTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+import type { AuthenticatedRequest } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", async (req: AuthenticatedRequest, res) => {
   try {
-    const notes = await db.select().from(notebooksTable).orderBy(desc(notebooksTable.updatedAt));
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const notes = await db.select().from(notebooksTable)
+      .where(eq(notebooksTable.userId, userId))
+      .orderBy(desc(notebooksTable.updatedAt));
     res.json({ notes });
   } catch (err) {
     console.error(err);
@@ -15,10 +24,17 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req: AuthenticatedRequest, res) => {
   try {
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     const { title, content, folder, tags, pinned } = req.body;
     const [note] = await db.insert(notebooksTable).values({
+      userId,
       title: title || "Untitled",
       content: content || "",
       folder: folder || null,
@@ -32,15 +48,24 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const id = parseInt(req.params.id as string);
     const { title, content, folder, tags, pinned } = req.body;
     const [note] = await db.update(notebooksTable)
       .set({ title, content, folder, tags, pinned, updatedAt: new Date() })
-      .where(eq(notebooksTable.id, id))
+      .where(and(eq(notebooksTable.id, id), eq(notebooksTable.userId, userId)))
       .returning();
-    if (!note) return res.status(404).json({ error: "Note not found" });
+    if (!note) {
+      res.status(404).json({ note: "Note not found" });
+      return;
+    }
     res.json(note);
   } catch (err) {
     console.error(err);
@@ -48,10 +73,16 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id);
-    await db.delete(notebooksTable).where(eq(notebooksTable.id, id));
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const id = parseInt(req.params.id as string);
+    await db.delete(notebooksTable).where(and(eq(notebooksTable.id, id), eq(notebooksTable.userId, userId)));
     res.json({ success: true });
   } catch (err) {
     console.error(err);

@@ -20,34 +20,24 @@ export interface DashboardView {
 }
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: "netPnl", type: "NetPnl", w: 2, h: 3, title: "Net P&L" },
-  { id: "expectancy", type: "TradeExpectancy", w: 2, h: 3, title: "Trade Expectancy" },
-  { id: "profitFactor", type: "ProfitFactor", w: 2, h: 3, title: "Profit Factor" },
+  { id: "floatingPnl", type: "FloatingPnl", w: 3, h: 3, title: "Floating P&L" },
+  { id: "netPnl", type: "NetPnl", w: 3, h: 3, title: "Net P&L" },
   { id: "winRate", type: "WinRate", w: 3, h: 3, title: "Win %" },
-  { id: "avgWinLoss", type: "AvgWinLoss", w: 3, h: 3, title: "Avg Win/Loss" },
-  { id: "zellaScore", type: "ZellaScore", w: 4, h: 6, minW: 3, minH: 4, title: "Trading Score" },
-  { id: "equityCurve", type: "EquityCurve", w: 4, h: 6, minW: 3, minH: 4, title: "Equity Curve" },
-  { id: "pnlBar", type: "PnlChart", w: 4, h: 6, minW: 3, minH: 4, title: "P&L Chart" },
-  { id: "tradesTable", type: "TradesTable", w: 6, h: 8, minW: 4, minH: 5, title: "Recent Trades" },
-  { id: "calendar", type: "Calendar", w: 6, h: 8, minW: 4, minH: 5, title: "Performance Calendar" },
-  { id: "currentStreak", type: "CurrentStreak", w: 2, h: 2, title: "Current Streak" },
-  { id: "accountBalance", type: "AccountBalance", w: 2, h: 2, title: "Account Balance" },
+  { id: "accountBalance", type: "AccountBalance", w: 3, h: 3, title: "Live Balance" },
+  { id: "equityCurve", type: "EquityCurve", w: 8, h: 6, minW: 4, minH: 4, title: "Equity Curve" },
+  { id: "riskExposure", type: "RiskExposure", w: 4, h: 6, minW: 3, minH: 4, title: "Risk Exposure" },
+  { id: "tradesTable", type: "TradesTable", w: 12, h: 8, minW: 6, minH: 5, title: "Automated Live Trades" },
 ];
 
 const DEFAULT_LAYOUTS: { [key: string]: Layout[] } = {
   lg: [
-    { i: "netPnl", x: 0, y: 0, w: 2, h: 3 },
-    { i: "expectancy", x: 2, y: 0, w: 2, h: 3 },
-    { i: "profitFactor", x: 4, y: 0, w: 2, h: 3 },
+    { i: "floatingPnl", x: 0, y: 0, w: 3, h: 3 },
+    { i: "netPnl", x: 3, y: 0, w: 3, h: 3 },
     { i: "winRate", x: 6, y: 0, w: 3, h: 3 },
-    { i: "avgWinLoss", x: 9, y: 0, w: 3, h: 3 },
-    { i: "zellaScore", x: 0, y: 3, w: 4, h: 6 },
-    { i: "equityCurve", x: 4, y: 3, w: 4, h: 6 },
-    { i: "pnlBar", x: 8, y: 3, w: 4, h: 6 },
-    { i: "tradesTable", x: 0, y: 9, w: 6, h: 8 },
-    { i: "calendar", x: 6, y: 9, w: 6, h: 8 },
-    { i: "currentStreak", x: 6, y: 0, w: 2, h: 3 },
-    { i: "accountBalance", x: 8, y: 0, w: 2, h: 3 },
+    { i: "accountBalance", x: 9, y: 0, w: 3, h: 3 },
+    { i: "equityCurve", x: 0, y: 3, w: 8, h: 6 },
+    { i: "riskExposure", x: 8, y: 3, w: 4, h: 6 },
+    { i: "tradesTable", x: 0, y: 9, w: 12, h: 8 },
   ]
 };
 

@@ -5,3 +5,6 @@ export * from "./playbooks";
 export * from "./notebooks";
 export * from "./challenges";
 export * from "./settings";
+export * from "./backtests";
+export * from "./ai";
+export * from "./integrations";

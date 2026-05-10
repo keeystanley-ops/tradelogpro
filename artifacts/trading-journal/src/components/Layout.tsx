@@ -30,6 +30,8 @@ import {
   PenLine,
   X,
   Sparkles,
+  Play,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -61,9 +63,11 @@ const NAV_SECTIONS = [
     items: [
       { path: "/notebook", label: "Notebook", icon: NotebookPen },
       { path: "/playbooks", label: "Playbook", icon: BookMarked },
+      { path: "/strategy", label: "Strategy AI", icon: Brain },
       { path: "/challenges", label: "Challenges", icon: Trophy },
       { path: "/calendar", label: "Calendar", icon: CalendarIcon },
       { path: "/weekly-review", label: "Weekly Review", icon: CalendarDays },
+      { path: "/backtest", label: "Backtest", icon: Play },
       { path: "/integrations", label: "Integrations", icon: Link2 },
     ],
   },

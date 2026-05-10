@@ -159,25 +159,10 @@ export default function WeeklyReview() {
   const [review, setReview] = useState<any>(null);
 
   useEffect(() => {
-    if (!isLoading) {
-      const mock = generateMockFullReview(dates.start);
-      if (apiReview) {
-        // MERGE REAL ACCOUNT DATA WITH THE FULL LAYOUT
-        setReview({
-          ...mock,
-          ...apiReview,
-          // Map API metrics back to the review layout
-          netPnl: apiReview.netPnl ?? mock.netPnl,
-          winRate: apiReview.winRate ?? mock.winRate,
-          totalTrades: apiReview.totalTrades ?? mock.totalTrades,
-          maxDrawdown: apiReview.maxDrawdown ?? mock.maxDrawdown,
-          // Use real insights if available, otherwise mock for the "full feel"
-          aiInsights: (apiReview.insights && apiReview.insights.length > 0) ? apiReview.insights : mock.aiInsights,
-        });
-      } else {
-        // Fallback to mock for full UX demonstration even if week has no data yet
-        setReview(mock);
-      }
+    if (!isLoading && apiReview) {
+      setReview(apiReview);
+    } else if (!isLoading && !apiReview) {
+      setReview(null);
     }
   }, [apiReview, isLoading, offsetWeeks]);
 
@@ -220,7 +205,44 @@ export default function WeeklyReview() {
     );
   }
 
-  if (!review) return null;
+  if (!review || review.totalTrades === 0) {
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h1 className="text-4xl font-display font-black tracking-tighter italic">Weekly <span className="text-primary not-italic">Review</span></h1>
+            <p className="text-muted-foreground font-medium mt-1">Select a week to begin your performance audit.</p>
+          </motion.div>
+          
+          <div className="flex items-center gap-3 bg-card border border-border rounded-2xl p-1.5 shadow-sm">
+            <Button variant="ghost" size="icon" onClick={() => setOffsetWeeks(o => o - 1)} className="rounded-xl">
+              <ChevronLeft className="w-4 h-4 text-primary" />
+            </Button>
+            <div className="flex items-center gap-3 px-4 text-[11px] font-black uppercase tracking-[0.2em] text-foreground min-w-[200px] justify-center">
+              <CalendarDays className="w-4 h-4 text-primary opacity-50" />
+              {dates.start.toLocaleDateString(undefined, { month: 'short', day: 'numeric'})} - {dates.end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setOffsetWeeks(o => o + 1)} disabled={offsetWeeks >= 0} className="rounded-xl">
+              <ChevronRight className="w-4 h-4 text-primary" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="card-panel min-h-[400px] flex flex-col items-center justify-center text-center p-12">
+           <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
+              <BarChart2 className="w-10 h-10 text-muted-foreground/40" />
+           </div>
+           <h2 className="text-xl font-black mb-2 uppercase tracking-tight">No Transactions Detected</h2>
+           <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 font-medium">
+             We couldn't find any closed trades for this period. Move to a different week or import your CSV/Manual trades to see your performance intelligence.
+           </p>
+           <Button onClick={() => setOffsetWeeks(o => o - 1)} variant="outline" className="rounded-xl border-primary/20 text-primary hover:bg-primary/5">
+              Check Previous Week
+           </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12">

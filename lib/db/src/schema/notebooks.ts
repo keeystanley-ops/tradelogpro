@@ -5,12 +5,14 @@ import {
   boolean,
   timestamp,
   jsonb,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const notebooksTable = pgTable("notebooks", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   title: text("title").notNull().default("Untitled"),
   content: text("content").notNull().default(""),
   folder: text("folder"),

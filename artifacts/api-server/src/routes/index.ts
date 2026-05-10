@@ -11,6 +11,8 @@ import notebookRouter from "./notebook";
 import challengesRouter from "./challenges";
 import settingsRouter from "./settings";
 import authRouter from "./auth";
+import backtestRouter from "./backtest";
+import integrationsRouter from "./integrations";
 import { authenticate } from "../middleware/auth";
 
 const router: IRouter = Router();
@@ -28,6 +30,8 @@ router.use("/playbooks", authenticate, playbooksRouter);
 router.use("/ai", authenticate, aiRouter);
 router.use("/notebook", authenticate, notebookRouter);
 router.use("/challenges", authenticate, challengesRouter);
+router.use("/backtest", authenticate, backtestRouter);
 router.use("/settings", authenticate, settingsRouter);
+router.use("/integrations", authenticate, integrationsRouter);
 
 export default router;

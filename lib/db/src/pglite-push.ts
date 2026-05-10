@@ -111,6 +111,21 @@ export async function pushPgSchemaToLocalDB(client: PGlite) {
       status TEXT NOT NULL DEFAULT 'ACTIVE',
       progress NUMERIC(5,2) NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS backtest_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      market_type TEXT NOT NULL,
+      timeframe TEXT NOT NULL,
+      start_date TIMESTAMPTZ NOT NULL,
+      replay_point TIMESTAMPTZ,
+      notes TEXT,
+      tags JSONB DEFAULT '[]' NOT NULL,
+      config JSONB DEFAULT '{}' NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
     )`
   ];
 
@@ -131,6 +146,8 @@ export async function pushPgSchemaToLocalDB(client: PGlite) {
     `ALTER TABLE trades ADD COLUMN IF NOT EXISTS emotions JSONB NOT NULL DEFAULT '[]'`,
     `ALTER TABLE trades ADD COLUMN IF NOT EXISTS grade TEXT`,
     `ALTER TABLE trades ADD COLUMN IF NOT EXISTS r_multiple NUMERIC(10,4)`,
+    `ALTER TABLE trades ADD COLUMN IF NOT EXISTS is_backtest BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE trades ADD COLUMN IF NOT EXISTS backtest_session_id INTEGER`,
   ];
 
   for (const migration of migrations) {

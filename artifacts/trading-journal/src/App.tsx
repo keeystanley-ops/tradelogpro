@@ -19,6 +19,9 @@ import Challenges from "@/pages/Challenges";
 import SettingsPage from "@/pages/Settings";
 import SignupPage from "@/pages/Signup";
 import LandingPage from "@/pages/Landing";
+import Backtest from "@/pages/Backtest";
+import BacktestSession from "@/pages/BacktestSession";
+import StrategyIntelligence from "@/pages/StrategyIntelligence";
 
 
 const queryClient = new QueryClient({
@@ -52,7 +55,10 @@ function Router() {
             <Route path="/goals" component={Goals} />
             <Route path="/playbooks" component={Playbooks} />
             <Route path="/weekly-review" component={WeeklyReview} />
+            <Route path="/backtest" component={Backtest} />
+            <Route path="/backtest/:id" component={BacktestSession} />
             <Route path="/integrations" component={Integrations} />
+            <Route path="/strategy" component={StrategyIntelligence} />
             <Route path="/settings" component={SettingsPage} />
             <Route component={NotFound} />
           </Switch>

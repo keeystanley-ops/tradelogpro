@@ -6,6 +6,7 @@ import {
   timestamp,
   jsonb,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -24,6 +25,7 @@ export const challengeStatusEnum = pgEnum("challenge_status", [
 
 export const challengesTable = pgTable("challenges", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
   type: challengeTypeEnum("type").notNull().default("CONSISTENCY"),

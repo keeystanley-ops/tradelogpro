@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 import { Plus, Trophy, Target, Zap, TrendingUp, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ interface Challenge {
 function useChallenges() {
   return useQuery<{ challenges: Challenge[] }>({
     queryKey: ["challenges"],
-    queryFn: () => fetch(`${API}/challenges`).then(r => r.json()),
+    queryFn: () => customFetch<{ challenges: Challenge[] }>(`${API}/challenges`),
   });
 }
 
@@ -90,17 +91,17 @@ export default function Challenges() {
   const [form, setForm] = useState({ name: "", description: "", type: "CONSISTENCY" as Challenge["type"], startDate: new Date().toISOString().slice(0, 10), endDate: "" });
 
   const createMutation = useMutation({
-    mutationFn: (body: any) => fetch(`${API}/challenges`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
+    mutationFn: (body: any) => customFetch(`${API}/challenges`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["challenges"] }); setShowCreate(false); toast({ title: "Challenge created!" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...body }: any) => fetch(`${API}/challenges/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
+    mutationFn: ({ id, ...body }: any) => customFetch(`${API}/challenges/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["challenges"] }); toast({ title: "Challenge updated" }); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => fetch(`${API}/challenges/${id}`, { method: "DELETE" }).then(r => r.json()),
+    mutationFn: (id: number) => customFetch(`${API}/challenges/${id}`, { method: "DELETE" }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["challenges"] }); toast({ title: "Challenge deleted" }); },
   });
 

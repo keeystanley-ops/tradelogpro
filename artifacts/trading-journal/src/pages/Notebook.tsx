@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 import { Plus, Search, Trash2, Pin, PinOff, FileText, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ interface Note {
 function useNotes() {
   return useQuery<{ notes: Note[] }>({
     queryKey: ["notes"],
-    queryFn: () => fetch(`${API}/notebook`).then(r => r.json()),
+    queryFn: () => customFetch<{ notes: Note[] }>(`${API}/notebook`),
   });
 }
 
@@ -39,17 +40,17 @@ export default function Notebook() {
   const [isEditing, setIsEditing] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (body: Partial<Note>) => fetch(`${API}/notebook`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
+    mutationFn: (body: Partial<Note>) => customFetch<Note>(`${API}/notebook`, { method: "POST", body: JSON.stringify(body) }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["notes"] }); toast({ title: "Note created" }); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...body }: Partial<Note> & { id: number }) => fetch(`${API}/notebook/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()),
+    mutationFn: ({ id, ...body }: Partial<Note> & { id: number }) => customFetch<Note>(`${API}/notebook/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     onSuccess: (updated) => { queryClient.invalidateQueries({ queryKey: ["notes"] }); setSelectedNote(updated); toast({ title: "Note saved" }); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => fetch(`${API}/notebook/${id}`, { method: "DELETE" }).then(r => r.json()),
+    mutationFn: (id: number) => customFetch(`${API}/notebook/${id}`, { method: "DELETE" }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["notes"] }); setSelectedNote(null); toast({ title: "Note deleted" }); },
   });
 

@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { tradesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -19,9 +20,16 @@ interface Insight {
   metric: string | null;
 }
 
-router.get("/insights", async (_req, res) => {
+router.get("/insights", async (req: AuthenticatedRequest, res) => {
   try {
-    const allTrades = await db.select().from(tradesTable).where(eq(tradesTable.status, "CLOSED"));
+    const userId = req.userId;
+    const allTrades = await db.select().from(tradesTable).where(
+      and(
+        eq(tradesTable.userId, userId),
+        eq(tradesTable.status, "CLOSED"),
+        eq(tradesTable.isBacktest, false)
+      )
+    );
     if (allTrades.length < 5) {
       return res.json({ insights: [], generatedAt: new Date().toISOString() });
     }

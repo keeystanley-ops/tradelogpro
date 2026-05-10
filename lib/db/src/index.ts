@@ -28,7 +28,8 @@ async function initDb() {
     const { drizzle } = await import("drizzle-orm/pglite");
     const { pushPgSchemaToLocalDB } = await import("./pglite-push");
 
-    const client = new PGlite("C:\\Users\\Administrator\\trade-insight.db");
+    const dbPath = process.env.DB_PATH || "trade-insight.db";
+    const client = new PGlite(dbPath);
     const db = drizzle(client, { schema });
 
     // Auto-create tables from schema
@@ -48,7 +49,9 @@ const dbProxy = new Proxy({} as any, {
 });
 
 export async function initializeDb() {
+  if (_db) return _db;
   _db = await initDb();
+  return _db;
 }
 
 export const db = dbProxy;
