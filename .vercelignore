@@ -1,0 +1,14 @@
+attached_assets
+node_modules
+dist
+.local
+.agents
+.git
+artifacts/trading-journal/node_modules
+artifacts/api-server/node_modules
+lib/db/node_modules
+scripts/node_modules
+trade-insight.db
+frontend.log
+package-lock.json
+yarn.lock

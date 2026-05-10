@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
     "scripts": {
-    "build": "pnpm run typecheck && pnpm -r --if-present run build && rm -rf public && mkdir -p public && cp -rv artifacts/trading-journal/dist/public/* public/",
+    "build": "pnpm --filter \"./artifacts/trading-journal\" --filter \"./artifacts/api-server\" --if-present run build && rm -rf public && mkdir -p public && cp -rv artifacts/trading-journal/dist/public/* public/",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --if-present run typecheck"
   },
   "private": true,
   "devDependencies": {
