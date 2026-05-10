@@ -4,11 +4,11 @@
   "outputDirectory": "public",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api"
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|assets/|images/|favicon\\.svg|landing_bg\\.png|opengraph\\.jpg).*)",
       "destination": "/index.html"
     }
   ]
