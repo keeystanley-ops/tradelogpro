@@ -3,5 +3,5 @@ import { initializeDb } from "../lib/db/src/index";
 
 export default async (req: any, res: any) => {
   await initializeDb();
-  return app(req, res);
+  return (app as any)(req, res);
 };
