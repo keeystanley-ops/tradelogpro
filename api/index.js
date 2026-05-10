@@ -1,2 +1,2 @@
-const handler = require('../artifacts/api-server/dist/vercel-entry.cjs');
+const handler = require('../api-dist/vercel-entry.cjs');
 module.exports = handler.default || handler;

@@ -1,6 +1,7 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "outputDirectory": "out",
   "rewrites": [
     {
       "source": "/api/:path*",
