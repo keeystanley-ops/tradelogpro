@@ -1,5 +1,5 @@
-import app from "../artifacts/api-server/src/app";
-import { initializeDb } from "../lib/db/src/index";
+import { initializeDb } from "@workspace/db";
+import app from "./app";
 
 export default async (req: any, res: any) => {
   await initializeDb();
