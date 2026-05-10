@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
     "scripts": {
-    "build": "pnpm --filter \"./artifacts/trading-journal\" --filter \"./artifacts/api-server\" --if-present run build && rm -rf public && mkdir -p public && cp -rv artifacts/trading-journal/dist/public/* public/",
+    "build": "pnpm --filter \"./artifacts/trading-journal\" --filter \"./artifacts/api-server\" --if-present run build && cp -rv artifacts/trading-journal/dist/public/* .",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --if-present run typecheck"
   },
