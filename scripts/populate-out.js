@@ -12,7 +12,17 @@ const apiDir = path.join(outDir, 'api');
 
 // Clean out directory
 if (fs.existsSync(outDir)) {
-  fs.rmSync(outDir, { recursive: true, force: true });
+  try {
+    fs.rmSync(outDir, { recursive: true, force: true });
+  } catch (err) {
+    console.warn('Warning: Could not fully remove out directory, cleaning contents instead:', err.message);
+    const files = fs.readdirSync(outDir);
+    for (const file of files) {
+      try {
+        fs.rmSync(path.join(outDir, file), { recursive: true, force: true });
+      } catch (e) {}
+    }
+  }
 }
 
 // Create directories
