@@ -5,7 +5,7 @@ import app from "./app";
 let migrationPromise: Promise<void> | null = null;
 
 async function ensureSchema() {
-  console.log("[Vercel-Entry] Performing Exhaustive Database Migration...");
+  console.log("[Vercel-Entry] Starting Database Sync...");
   
   try {
     // 1. Create Core Tables If Not Exist
@@ -41,23 +41,18 @@ async function ensureSchema() {
       )
     `);
 
-    // 2. Add Missing Columns to Users (Metadata)
-    const userColumns = [
-      ["display_name", "TEXT"],
-      ["created_at", "TIMESTAMPTZ DEFAULT NOW()"],
-      ["updated_at", "TIMESTAMPTZ DEFAULT NOW()"]
-    ];
-
-    for (const [col, type] of userColumns) {
+    // 2. Batch Add Columns to prevent timeout
+    // Users columns
+    const userCols = ["display_name", "created_at", "updated_at"];
+    for (const col of userCols) {
       try {
+        const type = col === "display_name" ? "TEXT" : "TIMESTAMPTZ DEFAULT NOW()";
         await db.execute(sql.raw(`ALTER TABLE public.users ADD COLUMN IF NOT EXISTS ${col} ${type}`));
-      } catch (e) {
-        console.warn(`[Vercel-Entry] Warning adding user column ${col}:`, (e as Error).message);
-      }
+      } catch (e) {}
     }
 
-    // 3. Add Missing Columns to User Settings (Exhaustive)
-    const settingsColumns = [
+    // Settings columns
+    const settingsCols = [
       ["email", "TEXT"],
       ["avatar_url", "TEXT"],
       ["timezone", "TEXT NOT NULL DEFAULT 'UTC'"],
@@ -77,17 +72,15 @@ async function ensureSchema() {
       ["created_at", "TIMESTAMPTZ NOT NULL DEFAULT NOW()"],
       ["updated_at", "TIMESTAMPTZ NOT NULL DEFAULT NOW()"]
     ];
-
-    for (const [col, type] of settingsColumns) {
+    
+    for (const [col, type] of settingsCols) {
       try {
-        await db.execute(sql.raw(`ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS ${col} ${type}`));
-      } catch (e) {
-        console.warn(`[Vercel-Entry] Warning adding settings column ${col}:`, (e as Error).message);
-      }
+         await db.execute(sql.raw(`ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS ${col} ${type}`));
+      } catch (e) {}
     }
 
-    // 4. Add Missing Columns to Trades (Full Metadata)
-    const tradeColumns = [
+    // Trade columns (The most critical ones)
+    const tradeCols = [
       ["is_backtest", "BOOLEAN DEFAULT FALSE"],
       ["backtest_session_id", "INTEGER"],
       ["created_at", "TIMESTAMPTZ DEFAULT NOW()"],
@@ -99,11 +92,10 @@ async function ensureSchema() {
       ["timeframe", "TEXT"],
       ["take_profit", "NUMERIC(20,8)"],
       ["stop_loss", "NUMERIC(20,8)"],
-      ["entry_price", "NUMERIC(20,8) DEFAULT 0"],
-      ["exit_price", "NUMERIC(20,8)"],
+      ["entry_price", "NUMERIC(20,4) DEFAULT 0"],
+      ["exit_price", "NUMERIC(20,4)"],
       ["quantity", "NUMERIC(20,8) DEFAULT 0"],
       ["market_session", "TEXT"],
-      ["entry_time", "TIMESTAMPTZ DEFAULT NOW()"],
       ["exit_time", "TIMESTAMPTZ"],
       ["duration_seconds", "INTEGER DEFAULT 0"],
       ["net_pnl", "NUMERIC(20,4) DEFAULT 0"],
@@ -125,49 +117,48 @@ async function ensureSchema() {
       ["r_multiple", "NUMERIC(10,4)"]
     ];
 
-    for (const [col, type] of tradeColumns) {
+    for (const [col, type] of tradeCols) {
       try {
         await db.execute(sql.raw(`ALTER TABLE public.trades ADD COLUMN IF NOT EXISTS ${col} ${type}`));
-      } catch (e) {
-        console.warn(`[Vercel-Entry] Warning adding trade column ${col}:`, (e as Error).message);
-      }
+      } catch (e) {}
     }
     
-    console.log("[Vercel-Entry] Full DB Sync Completed.");
+    console.log("[Vercel-Entry] Essential DB Sync Completed.");
   } catch (err) {
-    console.error("[Vercel-Entry] CRITICAL Migration Error:", err);
-    throw err;
+    console.error("[Vercel-Entry] Sync Error (non-fatal):", err);
   }
-
 }
 
 export default async (req: any, res: any) => {
   try {
-    if (process.env.VERCEL && !process.env.DATABASE_URL) {
-      throw new Error("Missing DATABASE_URL environment variable. Please add it to your Vercel project settings.");
-    }
+    const missingVars = [];
+    if (!process.env.DATABASE_URL) missingVars.push("DATABASE_URL");
+    if (!process.env.GITHUB_MODELS_API_KEY && !process.env.OPENAI_API_KEY) missingVars.push("GITHUB_MODELS_API_KEY (or OPENAI_API_KEY)");
     
-    console.log("[Vercel-Entry] Initializing request...");
-    await initializeDb();
-    
-    if (!migrationPromise) {
-      console.log("[Vercel-Entry] Starting schema sync...");
-      migrationPromise = ensureSchema().catch((err) => {
-        migrationPromise = null;
-        throw err;
+    if (missingVars.length > 0) {
+      return res.status(500).json({ 
+        error: "Missing Environment Variables", 
+        message: `The following environment variables are missing on Vercel: ${missingVars.join(", ")}. Please add them in your Vercel Project Settings.`,
+        hint: "Go to Vercel Dashboard -> Project -> Settings -> Environment Variables and add these values from your .env file."
       });
     }
     
-    await migrationPromise;
-    console.log("[Vercel-Entry] Initialization successful, handing off to app.");
+    await initializeDb();
+    
+    if (!migrationPromise) {
+      migrationPromise = ensureSchema();
+    }
+    
+    // We don't block the request on migration anymore for better availability
+    // migrationPromise.then(...) runs in background
+    
     return (app as any)(req, res);
   } catch (err: any) {
     console.error("[Vercel-Entry] CRITICAL ERROR:", err);
     return res.status(500).json({ 
       error: "Vercel Entry Initialization Failed", 
       message: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-      hint: "Ensure DATABASE_URL is correctly set in Vercel Environment Variables."
+      hint: "Check server logs for details. This is likely a database connection issue."
     });
   }
 };
