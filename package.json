@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
     "scripts": {
-    "build": "pnpm --filter \"./artifacts/trading-journal\" --filter \"./artifacts/api-server\" --if-present run build && (if exist out rd /s /q out) && mkdir out\\api-dist out\\api && xcopy /e /i /y artifacts\\trading-journal\\dist\\public\\* out\\ && xcopy /e /i /y artifacts\\api-server\\dist\\* out\\api-dist\\ && xcopy /e /i /y api\\* out\\api\\",
+    "build": "pnpm --filter \"./artifacts/trading-journal\" --filter \"./artifacts/api-server\" --if-present run build && node scripts/populate-out.js",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --if-present run typecheck"
   },
