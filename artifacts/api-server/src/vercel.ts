@@ -131,34 +131,37 @@ async function ensureSchema() {
 
 export default async (req: any, res: any) => {
   try {
-    const missingVars = [];
-    if (!process.env.DATABASE_URL) missingVars.push("DATABASE_URL");
-    if (!process.env.GITHUB_MODELS_API_KEY && !process.env.OPENAI_API_KEY) missingVars.push("GITHUB_MODELS_API_KEY (or OPENAI_API_KEY)");
-    
-    if (missingVars.length > 0) {
-      return res.status(500).json({ 
-        error: "Missing Environment Variables", 
-        message: `The following environment variables are missing on Vercel: ${missingVars.join(", ")}. Please add them in your Vercel Project Settings.`,
-        hint: "Go to Vercel Dashboard -> Project -> Settings -> Environment Variables and add these values from your .env file."
-      });
-    }
-    
+    console.log("[Vercel-Entry] Initializing request...");
     await initializeDb();
     
     if (!migrationPromise) {
       migrationPromise = ensureSchema();
     }
-    
-    // We don't block the request on migration anymore for better availability
-    // migrationPromise.then(...) runs in background
-    
+    await migrationPromise;
+
+    console.log("[Vercel-Entry] DB Initialized and Synced. Processing with app...");
     return (app as any)(req, res);
   } catch (err: any) {
-    console.error("[Vercel-Entry] CRITICAL ERROR:", err);
+    console.error("[Vercel-Entry] CRITICAL ERROR DETAILS:", {
+      message: err.message,
+      stack: err.stack,
+      env: {
+        HAS_DB_URL: !!process.env.DATABASE_URL,
+        NODE_ENV: process.env.NODE_ENV,
+        VERCEL_ENV: process.env.VERCEL_ENV
+      }
+    });
+
     return res.status(500).json({ 
       error: "Vercel Entry Initialization Failed", 
       message: err.message,
-      hint: "Check server logs for details. This is likely a database connection issue."
+      diagnostics: {
+        hasDbUrl: !!process.env.DATABASE_URL,
+        hasOpenAiKey: !!process.env.OPENAI_API_KEY,
+        hasGithubModelsKey: !!process.env.GITHUB_MODELS_API_KEY,
+        nodeVersion: process.version
+      },
+      hint: "If you see 'hasDbUrl: false', you must add DATABASE_URL to your Vercel Environment Variables."
     });
   }
 };
