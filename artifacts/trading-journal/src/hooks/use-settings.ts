@@ -37,7 +37,6 @@ export function useGetSettings() {
         if (res.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-          window.location.href = "/";
         }
         throw new Error("Failed to fetch settings");
       }
@@ -63,7 +62,6 @@ export function useUpdateSettings() {
         if (res.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-          window.location.href = "/";
         }
         throw new Error("Failed to update settings");
       }

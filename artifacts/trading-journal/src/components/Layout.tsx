@@ -92,11 +92,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { data: settings } = useGetSettings();
   const [, setLocation] = useLocation();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setLocation("/");
-  };
+
 
   useEffect(() => {
     const handleOpenAddTrade = () => setIsAddTradeOpen(true);
@@ -322,12 +318,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden text-left flex-1">
                 <span className="text-xs font-bold text-foreground truncate">{settings?.displayName || "Trader"}</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-[10px] text-primary hover:text-primary/80 transition-colors text-left font-semibold"
-                >
-                  Log out
-                </button>
+                <span className="text-[10px] text-muted-foreground/60 text-left font-semibold">Active Session</span>
               </div>
             )}
           </div>

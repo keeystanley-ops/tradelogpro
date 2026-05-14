@@ -2,6 +2,12 @@
   "version": 2,
   "cleanUrls": true,
   "outputDirectory": "out",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
   "rewrites": [
     {
       "source": "/api/:path*",

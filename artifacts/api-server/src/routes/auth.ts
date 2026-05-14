@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { usersTable, userSettingsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
 const router: IRouter = Router();
@@ -16,19 +16,15 @@ router.post("/signup", async (req, res) => {
     }
 
 
-    console.log("Signup request payload:", { email, displayName });
     const normalizedEmail = email.toLowerCase().trim();
-    
-    // Restrict to Gmail
-    if (!normalizedEmail.endsWith("@gmail.com")) {
-      return res.status(400).json({ error: "Access Restricted: Only @gmail.com accounts are allowed for security verification." });
-    }
+    // Normalize email
+    console.log("Signup request payload:", { email: normalizedEmail, displayName });
 
     // Check if user exists
     console.log("Checking DB responsiveness...");
     try {
-       const res = await (db as any).client.query("SELECT 1 as alive");
-       console.log("DB response received:", res);
+       await db.execute(sql`SELECT 1`);
+       console.log("DB status: ACTIVE");
     } catch (err) {
        console.error("DB check failed:", err);
     }

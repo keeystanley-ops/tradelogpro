@@ -1,5 +1,5 @@
-import { initializeDb, db } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { initializeDb, db, usersTable, userSettingsTable } from "@workspace/db";
+import { sql, eq } from "drizzle-orm";
 import app from "./app";
 
 const rawPort = process.env["PORT"] ?? "3001";
@@ -150,6 +150,25 @@ initializeDb().then(async () => {
     await db.execute(sql`ALTER TABLE trades ADD COLUMN IF NOT EXISTS market_session TEXT`);
 
     console.log("[DB] All system tables verified.");
+
+    // Seed default user (userId: 1) for the removed login workflow
+    console.log("[DB] Ensuring default user exists...");
+    const [defaultUser] = await db.select().from(usersTable).where(eq(usersTable.id, 1));
+    if (!defaultUser) {
+      console.log("[DB] Seeding default user...");
+      await db.insert(usersTable).values({
+        id: 1,
+        email: "trader@example.com",
+        password: "password", // Not used since login is removed
+        displayName: "Trader",
+      }).onConflictDoNothing();
+      
+      await db.insert(userSettingsTable).values({
+        userId: 1,
+        displayName: "Trader",
+      }).onConflictDoNothing();
+      console.log("[DB] Default user seeded.");
+    }
   } catch (e) {
     console.warn("[DB] Migration warning:", e);
   }

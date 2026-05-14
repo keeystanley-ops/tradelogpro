@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,11 +18,10 @@ import Reports from "@/pages/Reports";
 import Notebook from "@/pages/Notebook";
 import Challenges from "@/pages/Challenges";
 import SettingsPage from "@/pages/Settings";
-import SignupPage from "@/pages/Signup";
-import LandingPage from "@/pages/Landing";
 import Backtest from "@/pages/Backtest";
 import BacktestSession from "@/pages/BacktestSession";
 import StrategyIntelligence from "@/pages/StrategyIntelligence";
+import { ThemeProvider } from "@/components/theme-provider";
 
 
 const queryClient = new QueryClient({
@@ -37,51 +37,44 @@ const queryClient = new QueryClient({
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={LandingPage} />
-      <Route path="/signup" component={SignupPage} />
-      <Route>
-        <Layout>
-          <Switch>
-            <Route path="/dashboard" component={Dashboard} />
+    <Layout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
 
-            <Route path="/daily-journal" component={DailyJournal} />
-            <Route path="/journal" component={Journal} />
-            <Route path="/analytics" component={Analytics} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/notebook" component={Notebook} />
-            <Route path="/challenges" component={Challenges} />
-            <Route path="/calendar" component={CalendarView} />
-            <Route path="/goals" component={Goals} />
-            <Route path="/playbooks" component={Playbooks} />
-            <Route path="/weekly-review" component={WeeklyReview} />
-            <Route path="/backtest" component={Backtest} />
-            <Route path="/backtest/:id" component={BacktestSession} />
-            <Route path="/integrations" component={Integrations} />
-            <Route path="/strategy" component={StrategyIntelligence} />
-            <Route path="/settings" component={SettingsPage} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
-      </Route>
-    </Switch>
+        <Route path="/daily-journal" component={DailyJournal} />
+        <Route path="/journal" component={Journal} />
+        <Route path="/analytics" component={Analytics} />
+        <Route path="/reports" component={Reports} />
+        <Route path="/notebook" component={Notebook} />
+        <Route path="/challenges" component={Challenges} />
+        <Route path="/calendar" component={CalendarView} />
+        <Route path="/goals" component={Goals} />
+        <Route path="/playbooks" component={Playbooks} />
+        <Route path="/weekly-review" component={WeeklyReview} />
+        <Route path="/backtest" component={Backtest} />
+        <Route path="/backtest/:id" component={BacktestSession} />
+        <Route path="/integrations" component={Integrations} />
+        <Route path="/strategy" component={StrategyIntelligence} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
   );
 }
 
-import { ThemeProvider } from "@/components/theme-provider";
-
 function App() {
   return (
-    <ThemeProvider 
-      attribute="class" 
-      defaultTheme="dark" 
-      enableSystem={false} 
-      storageKey="trade-insight-theme"
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AppInitializer />
             <Router />
           </WouterRouter>
           <Toaster />
@@ -89,6 +82,22 @@ function App() {
       </QueryClientProvider>
     </ThemeProvider>
   );
+}
+
+function AppInitializer() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    // Ensure we have a token for all requests to satisfy headers
+    // Backend will force userId: 1 anyway in this simplified mode.
+    const token = localStorage.getItem("token");
+    if (!token || token === "null" || token === "undefined") {
+      localStorage.setItem("token", "guest-token");
+      localStorage.setItem("user", JSON.stringify({ id: 1, displayName: "Trader" }));
+    }
+  }, []);
+
+  return null;
 }
 
 export default App;

@@ -313,7 +313,7 @@ export async function customFetch<T = unknown>(
     if (response.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/signup";
+      window.location.href = "/";
     }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);

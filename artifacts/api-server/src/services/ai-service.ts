@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-const GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com";
+const GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com/v1";
 
 export interface AIAnalysisRequest {
   tradeData: any;
@@ -22,7 +22,7 @@ export class AIService {
     const isGithub = !!process.env.GITHUB_MODELS_API_KEY;
     
     this.client = new OpenAI({
-      baseURL: isGithub ? GITHUB_MODELS_BASE_URL : process.env.OPENAI_API_BASE,
+      baseURL: isGithub ? GITHUB_MODELS_BASE_URL : (process.env.OPENAI_API_BASE || "https://api.openai.com/v1"),
       apiKey: apiKey,
     });
 

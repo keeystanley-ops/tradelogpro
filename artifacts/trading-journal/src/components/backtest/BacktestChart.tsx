@@ -1,5 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, CandlestickSeries, createSeriesMarkers } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, Time } from 'lightweight-charts';
 
 interface BacktestChartProps {
   data: CandlestickData[];
@@ -18,18 +18,17 @@ const BacktestChart = forwardRef<BacktestChartHandle, BacktestChartProps>(({ dat
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  const markersRef = useRef<any>(null);
 
   useImperativeHandle(ref, () => ({
     addMarker: (marker: any) => {
-      if (markersRef.current) {
-        const currentMarkers = markersRef.current.markers() || [];
-        markersRef.current.setMarkers([...currentMarkers, marker]);
+      if (seriesRef.current) {
+        const currentMarkers = (seriesRef.current as any).markers() || [];
+        seriesRef.current.setMarkers([...currentMarkers, marker]);
       }
     },
     clearMarkers: () => {
-      if (markersRef.current) {
-        markersRef.current.setMarkers([]);
+      if (seriesRef.current) {
+        seriesRef.current.setMarkers([]);
       }
     },
     updateData: (newData: CandlestickData[]) => {
@@ -73,6 +72,7 @@ const BacktestChart = forwardRef<BacktestChartHandle, BacktestChartProps>(({ dat
       },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
+        relativeVisible: true,
         timeVisible: true,
         secondsVisible: false,
       },
@@ -81,8 +81,7 @@ const BacktestChart = forwardRef<BacktestChartHandle, BacktestChartProps>(({ dat
       },
     });
 
-    // v5 Series Initialization
-    const series = chart.addSeries(CandlestickSeries, {
+    const series = chart.addCandlestickSeries({
       upColor: '#10B981',
       downColor: '#EF4444',
       borderVisible: false,
@@ -91,14 +90,10 @@ const BacktestChart = forwardRef<BacktestChartHandle, BacktestChartProps>(({ dat
     });
 
     series.setData(data);
-    
-    // v5 Markers Initialization (Markers are now a plugin)
-    const markersPlugin = createSeriesMarkers(series);
-    markersPlugin.setMarkers(markers);
+    series.setMarkers(markers);
 
     chartRef.current = chart;
     seriesRef.current = series as any;
-    markersRef.current = markersPlugin;
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -127,8 +122,8 @@ const BacktestChart = forwardRef<BacktestChartHandle, BacktestChartProps>(({ dat
 
   // Update markers when they change
   useEffect(() => {
-    if (markersRef.current) {
-      markersRef.current.setMarkers(markers);
+    if (seriesRef.current) {
+      seriesRef.current.setMarkers(markers);
     }
   }, [markers]);
 

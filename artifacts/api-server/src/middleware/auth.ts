@@ -8,18 +8,9 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized: Missing token" });
-  }
-
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-    req.userId = decoded.userId;
-    next();
-  } catch (err) {
-    console.error("Auth error:", err);
-    res.status(401).json({ error: "Unauthorized: Invalid token" });
-  }
+  // Always force user 1 for the removed login/landing workflow
+  // This ensures that even if legacy tokens exist in the browser, 
+  // the user sees the same 'fully functional' dashboard.
+  req.userId = 1;
+  next();
 }
