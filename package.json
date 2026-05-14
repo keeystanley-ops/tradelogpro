@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
     "scripts": {
-    "build": "pnpm --filter \"./artifacts/trading-journal\" --filter \"./artifacts/api-server\" --if-present run build && node scripts/populate-out.js",
+    "build": "pnpm --filter ./artifacts/trading-journal --filter ./artifacts/api-server --if-present run build && node scripts/populate-out.js",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --if-present run typecheck"
   },
